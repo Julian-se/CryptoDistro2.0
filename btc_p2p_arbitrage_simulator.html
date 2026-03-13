@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC P2P Arbitrage Simulator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #fff; color: #1a1a1a; padding: 2rem; max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 500; margin-bottom: 1.5rem; }
+  label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; }
+  select, input[type=range] { width: 100%; }
+  select { padding: 6px 8px; border: 0.5px solid #ccc; border-radius: 8px; font-size: 14px; background: #fff; }
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; align-items: end; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+  .card { background: #f5f5f3; border-radius: 8px; padding: 12px 14px; }
+  .card p.label { font-size: 12px; color: #888; margin-bottom: 4px; }
+  .card p.val { font-size: 20px; font-weight: 500; }
+  .card p.sub { font-size: 12px; color: #888; margin-top: 4px; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .note { margin-top: 1rem; padding: 12px 14px; background: #f5f5f3; border-radius: 8px; font-size: 13px; color: #555; line-height: 1.6; }
+  .assumptions { margin-top: 12px; padding: 12px 14px; border-radius: 8px; border: 0.5px solid #ddd; font-size: 12px; color: #888; line-height: 1.7; }
+  strong.head { font-weight: 500; color: #1a1a1a; }
+</style>
+</head>
+<body>
+
+<h1>BTC P2P Arbitrage Simulator — $500 starting capital</h1>
+
+<div class="controls">
+  <div>
+    <label>Preset scenario</label>
+    <select id="scenario">
+      <option value="optimistic">Optimistic</option>
+      <option value="realistic" selected>Realistic</option>
+      <option value="conservative">Conservative</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div>
+    <label>Net spread/cycle: <strong id="spread-val">2.5</strong>%</label>
+    <input type="range" min="0.5" max="6" step="0.1" value="2.5" id="spread">
+  </div>
+  <div>
+    <label>Cycles/day: <strong id="cycles-val">6</strong></label>
+    <input type="range" min="1" max="14" step="1" value="6" id="cycles">
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <p class="label">24 hours</p>
+    <p class="val" id="val-24h">—</p>
+    <p class="sub" id="pct-24h"></p>
+  </div>
+  <div class="card">
+    <p class="label">72 hours</p>
+    <p class="val" id="val-72h">—</p>
+    <p class="sub" id="pct-72h"></p>
+  </div>
+  <div class="card">
+    <p class="label">1 week</p>
+    <p class="val" id="val-7d">—</p>
+    <p class="sub" id="pct-7d"></p>
+  </div>
+  <div class="card">
+    <p class="label">1 month</p>
+    <p class="val" id="val-30d">—</p>
+    <p class="sub" id="pct-30d"></p>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <canvas id="arb-chart"></canvas>
+</div>
+
+<div class="note" id="wall-note"></div>
+
+<div class="assumptions">
+  <strong class="head">Model assumptions</strong><br>
+  Starting capital $500 · Liquidity ceiling $8k (P2P spread compresses above ~$4k) · Friction/scam loss 3%/week baked in · Fees included in net spread · No tax modelled · Cycles assume 16 productive hours/day
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const START = 500;
+const CEIL = 8000;
+const HALF_CEIL = CEIL * 0.5;
+const FRICTION_PER_WEEK = 0.03;
+
+const presets = {
+  optimistic:   { spread: 4.0, cycles: 10 },
+  realistic:    { spread: 2.5, cycles: 6  },
+  conservative: { spread: 1.5, cycles: 3  }
+};
+
+function simulate(spreadPct, cyclesPerDay) {
+  const days = [];
+  let cap = START;
+  for (let d = 0; d <= 30; d++) {
+    days.push(Math.round(cap));
+    for (let c = 0; c < cyclesPerDay; c++) {
+      let eff = spreadPct;
+      if (cap > HALF_CEIL) {
+        const comp = Math.max(0.25, 1 - (cap - HALF_CEIL) / CEIL);
+        eff *= comp;
+      }
+      cap *= (1 + eff / 100);
+      if (cap > CEIL * 2.5) cap = CEIL * 2.5;
+    }
+    if (d > 0 && d % 7 === 0) cap *= (1 - FRICTION_PER_WEEK);
+  }
+  return days;
+}
+
+let chart;
+
+function fmt(v) { return '$' + Math.round(v).toLocaleString('en-US'); }
+function pct(v) {
+  const p = ((v / START) - 1) * 100;
+  return (p >= 0 ? '+' : '') + Math.round(p) + '%';
+}
+
+function update() {
+  const spread = parseFloat(document.getElementById('spread').value);
+  const cycles = parseInt(document.getElementById('cycles').value);
+  document.getElementById('spread-val').textContent = spread.toFixed(1);
+  document.getElementById('cycles-val').textContent = cycles;
+
+  const data = simulate(spread, cycles);
+
+  document.getElementById('val-24h').textContent = fmt(data[1]);
+  document.getElementById('pct-24h').textContent = pct(data[1]);
+  document.getElementById('val-72h').textContent = fmt(data[3]);
+  document.getElementById('pct-72h').textContent = pct(data[3]);
+  document.getElementById('val-7d').textContent  = fmt(data[7]);
+  document.getElementById('pct-7d').textContent  = pct(data[7]);
+  document.getElementById('val-30d').textContent = fmt(data[30]);
+  document.getElementById('pct-30d').textContent = pct(data[30]);
+
+  const wallDay = data.findIndex((v, i) => i > 0 && v > HALF_CEIL);
+  const note = document.getElementById('wall-note');
+  if (wallDay > 0 && wallDay <= 30) {
+    note.innerHTML = `Liquidity wall hit around <strong style="font-weight:500;color:#1a1a1a">day ${wallDay}</strong>. Above ~${fmt(HALF_CEIL)}, finding P2P sellers at the spread you need gets hard — you become visible, KYC flags activate on exchanges, and sellers price you in. The chart flattens here. This is where most operators plateau and either diversify markets (new regions, new payment rails) or redeploy capital into routing nodes instead.`;
+  } else {
+    note.innerHTML = `At this spread/cycle rate you stay below the friction zone for the full month. Slower but safer compounding — fewer KYC triggers, more consistent P2P deal flow.`;
+  }
+
+  const labels = Array.from({ length: 31 }, (_, i) => i === 0 ? 'Start' : `D${i}`);
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.update('none');
+  } else {
+    chart = new Chart(document.getElementById('arb-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Portfolio ($)',
+          data,
+          borderColor: '#1D9E75',
+          backgroundColor: 'rgba(29,158,117,0.08)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => fmt(ctx.parsed.y) } }
+        },
+        scales: {
+          x: {
+            ticks: { maxTicksLimit: 10, font: { size: 11 }, color: '#888' },
+            grid: { color: 'rgba(136,135,128,0.12)' }
+          },
+          y: {
+            ticks: {
+              callback: v => v >= 1000 ? '$' + (v/1000).toFixed(0) + 'k' : '$' + v,
+              font: { size: 11 },
+              color: '#888'
+            },
+            grid: { color: 'rgba(136,135,128,0.12)' }
+          }
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('scenario').addEventListener('change', e => {
+  const p = presets[e.target.value];
+  if (p) {
+    document.getElementById('spread').value = p.spread;
+    document.getElementById('cycles').value = p.cycles;
+  }
+  update();
+});
+document.getElementById('spread').addEventListener('input', () => {
+  document.getElementById('scenario').value = 'custom';
+  update();
+});
+document.getElementById('cycles').addEventListener('input', () => {
+  document.getElementById('scenario').value = 'custom';
+  update();
+});
+
+update();
+</script>
+</body>
+</html>
