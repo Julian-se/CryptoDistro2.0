@@ -1,0 +1,74 @@
+# CryptoDistro 2.0 — Configuration Template
+# Copy to settings.yaml and fill in your API keys
+# Arbitrage heavy loop: buy cheap on P2P → sell at spot on CEX
+
+# --- Platform API Keys ---
+binance:
+  api_key: ""
+  api_secret: ""
+  # Set to true for testnet during development
+  testnet: true
+
+noones:
+  api_key: ""
+  api_secret: ""
+  # OAuth2 token endpoint
+  auth_url: "https://auth.noones.com/oauth2/token"
+  # API base URL for all API calls
+  api_url: "https://api.noones.com"
+
+# --- Lightning (Phase 2 — placeholder) ---
+lnd:
+  host: "localhost"
+  port: 10009
+  tls_cert_path: "~/.lnd/tls.cert"
+  macaroon_path: "~/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
+
+# --- Telegram Alerts ---
+telegram:
+  bot_token: ""
+  # Your numeric chat ID (get it from @userinfobot on Telegram)
+  chat_id: ""
+
+# --- Trading Parameters ---
+trading:
+  pairs:
+    - "BTC/USDT"
+  min_spread_pct: 1.5
+  min_trade_usd: 10
+  max_trade_usd: 500
+  starting_capital_usd: 500
+
+# --- Scanning ---
+scanner:
+  poll_interval_sec: 30
+  noones_offers_limit: 20
+  noones_payment_methods: []
+  noones_currencies:
+    - "USD"
+    - "EUR"
+    - "SEK"
+
+# --- Balance Thresholds ---
+balance:
+  low_balance_pct: 20
+  target_split:
+    binance: 0.5
+    noones: 0.5
+
+# --- Fees (used for net profit calculation) ---
+fees:
+  binance_trading_pct: 0.1
+  noones_fee_pct: 0.0
+  lightning_fee_sats: 10
+  onchain_fee_usd: 2.0
+  usdt_trc20_fee_usd: 1.0
+
+# --- Database ---
+database:
+  path: "db/trades.db"
+
+# --- Logging ---
+logging:
+  level: "INFO"
+  file: "logs/cryptodistro.log"

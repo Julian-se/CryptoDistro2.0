@@ -1,0 +1,38 @@
+# API keys and secrets
+config/settings.yaml
+.env
+
+# Database
+db/*.db
+
+# Logs
+logs/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Next.js build artifacts
+frontend/.next/
+frontend/node_modules/
+frontend/tsconfig.tsbuildinfo
+
+# Superpowers brainstorm server
+.superpowers/
+
+# DB WAL/SHM
+db/*.db-shm
+db/*.db-wal
+
+# Large binaries
+*.pdf
