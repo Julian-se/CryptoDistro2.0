@@ -1,0 +1,15 @@
+Bra research — du har nu validerat något viktigt empiriskt: den klassiska "köp billigt på P2P, sälj på spot"-modellen existerar inte organiskt i mogna marknader som Sverige/USA. Den finns i marknader med valutakontroller. Det förändrar hela strategin och simuleringen fundamentalt. Låt mig bygga den korrekt.---
+
+### Vad din research faktiskt bevisade
+
+Du har gjort något viktigt: du invaliderade den ursprungliga modellens antagande empiriskt. 2% spread finns inte organiskt i mogna marknader — den existerar strukturellt i marknader med valutakontroller. Det är en fundamental strategisk insikt.
+
+**Den verkliga arbitrage-möjligheten är geografisk, inte plattformsbaserad.** Det är inte att hitta ett bättre pris på Binance vs NoOnes. Det är att Sverige har fri kapitalrörelse och Argentina inte har det. Du är bryggan.
+
+**Varför Lightning hjälper annorlunda här:**
+
+I dessa marknader löser Lightning inte fiat-benet — en argentinsk säljare som tar emot peso via MercadoPago bryr sig inte om Lightning. Men Lightning löser *BTC-rotationen mellan marknader*. Du köper BTC i Argentina till $64k, skickar den via Lightning till din Nigeria-wallet på sekunder, säljer den för naira till en köpare som betalar 8% premium. Det är cross-market multi-hop arbitrage, och det är där Lightning ger dig ett genuint strukturellt försprång.
+
+**Det nya problemet du behöver lösa:**
+
+Med 9% spread och $500 startkapital är matematiken fantastisk på papper. Men du behöver faktiska betalningskonton i dessa marknader — ett argentinskt bankkonto eller MercadoPago-access, ett nigerianskt konto för First Bank-transfers. Det är det verkliga entry-barriären, inte kapitalet.

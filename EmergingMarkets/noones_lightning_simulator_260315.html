@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoOnes Lightning P2P Simulator</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#fafaf9;color:#1a1a1a;padding:2rem;max-width:900px;margin:0 auto;line-height:1.7}
+h1{font-size:22px;font-weight:500;margin-bottom:0.25rem}
+.meta{font-size:14px;color:#666;margin-bottom:2rem}
+.banner{padding:12px 16px;border-radius:8px;border:0.5px solid #ddd;font-size:13px;color:#555;margin-bottom:1.5rem;line-height:1.6;background:#fff}
+.banner strong{font-weight:500;color:#1a1a1a}
+
+/* Controls */
+.controls-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem}
+.controls-grid-3 label,.controls-grid-2 label{font-size:13px;color:#666;display:block;margin-bottom:4px}
+select,input[type=range]{width:100%}
+select{padding:6px 8px;border:0.5px solid #ccc;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a}
+.sliders{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:1.5rem}
+
+/* Milestone cards */
+.milestones{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.card{background:#f5f5f3;border-radius:8px;padding:12px 14px}
+.card .lbl{font-size:11px;color:#888;margin-bottom:3px}
+.card .val{font-size:18px;font-weight:500}
+.card .sub{font-size:11px;color:#888;margin-top:3px}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:12px;color:#666;align-items:center}
+.legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+/* Chart */
+.chart-wrap{position:relative;width:100%;height:260px;margin-bottom:1rem}
+
+/* Note box */
+.note{padding:12px 16px;background:#f5f5f3;border-radius:8px;font-size:13px;color:#555;line-height:1.6;margin-bottom:1.5rem}
+.note strong{font-weight:500;color:#1a1a1a}
+
+/* Two-col info */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.info-card{padding:14px 16px;border-radius:8px;background:#f5f5f3}
+.info-card.green{border-top:2px solid #1D9E75}
+.info-card.amber{border-top:2px solid #FAC775}
+.info-card .info-title{font-size:11px;color:#888;margin-bottom:6px}
+.info-card p{font-size:13px;color:#444;line-height:1.6}
+
+/* Assumptions */
+.assumptions{padding:12px 16px;border-radius:8px;border:0.5px solid #ddd;font-size:12px;color:#888;line-height:1.7;margin-bottom:2rem}
+.assumptions strong{font-weight:500;color:#1a1a1a}
+
+/* Explainer sections */
+.section{margin-bottom:2rem}
+.section h2{font-size:17px;font-weight:500;margin-bottom:0.75rem;padding-bottom:0.5rem;border-bottom:0.5px solid #e0e0e0}
+.section p{font-size:14px;color:#444;margin-bottom:0.8rem;line-height:1.75}
+.section ul{font-size:14px;color:#444;padding-left:1.4rem;margin-bottom:0.8rem}
+.section ul li{margin-bottom:0.4rem;line-height:1.7}
+.section pre{background:#f0f0ee;padding:12px 16px;border-radius:8px;font-family:monospace;font-size:13px;margin:0.8rem 0;overflow-x:auto}
+.section strong{font-weight:500;color:#1a1a1a}
+
+.divider{border:none;border-top:0.5px solid #e0e0e0;margin:2rem 0}
+
+footer{font-size:12px;color:#aaa;text-align:center;padding-top:1.5rem;border-top:0.5px solid #eee}
+</style>
+</head>
+<body>
+
+<h1>NoOnes Lightning — P2P Annonsör Simulator</h1>
+<p class="meta">$500 startkapital · Strukturell premium 6–12% · Argentina / Nigeria / Venezuela</p>
+
+<div class="banner">
+  <strong>Nya parametrar jämfört med tidigare simuleringar.</strong> NoOnes inbyggda Lightning-wallet eliminerar behovet av en egen Lightning-nod — ingen kanalhantering, ingen uptime-övervakning, ingen channel.db-backup. Du är P2P-annonsör: köper BTC på spot-exchange, säljer till köpare i valutagreglerade länder med 6–12% strukturell premium. BTC-benet settlar på sekunder via Lightning. Flaskhalsen är nu fiat-verifiering (15–30 min per trade), inte BTC-settlement.
+</div>
+
+<!-- Controls -->
+<div class="controls-grid-3">
+  <div>
+    <label>Marknad / scenario</label>
+    <select id="scenario">
+      <option value="conservative">Konservativt — Nigeria 6%</option>
+      <option value="realistic" selected>Realistiskt — Argentina 9%</option>
+      <option value="optimistic">Optimistiskt — Venezuela 12%</option>
+      <option value="custom">Eget</option>
+    </select>
+  </div>
+  <div>
+    <label>Visa</label>
+    <select id="view">
+      <option value="capital">Kapital ($)</option>
+      <option value="profit">Kumulativ vinst ($)</option>
+      <option value="daily">Daglig volym ($)</option>
+    </select>
+  </div>
+  <div>
+    <label>Jämför on-chain</label>
+    <select id="showoc">
+      <option value="yes" selected>Visa</option>
+      <option value="no">Dölj</option>
+    </select>
+  </div>
+</div>
+
+<div class="sliders">
+  <div>
+    <label>Spread: <strong id="spread-val">9</strong>%</label>
+    <input type="range" min="4" max="14" step="0.5" value="9" id="spread">
+  </div>
+  <div>
+    <label>Fiat-verif. tid: <strong id="fiat-val">20</strong> min</label>
+    <input type="range" min="10" max="45" step="5" value="20" id="fiatmin">
+  </div>
+  <div>
+    <label>Aktiva timmar/dag: <strong id="hours-val">10</strong>h</label>
+    <input type="range" min="4" max="16" step="1" value="10" id="hours">
+  </div>
+</div>
+
+<!-- Milestone cards -->
+<div class="milestones">
+  <div class="card"><div class="lbl">24h</div><div class="val" id="v24">—</div><div class="sub" id="s24"></div></div>
+  <div class="card"><div class="lbl">72h</div><div class="val" id="v72">—</div><div class="sub" id="s72"></div></div>
+  <div class="card"><div class="lbl">1 vecka</div><div class="val" id="v7">—</div><div class="sub" id="s7"></div></div>
+  <div class="card"><div class="lbl">1 månad</div><div class="val" id="v30">—</div><div class="sub" id="s30"></div></div>
+</div>
+
+<!-- Stats row -->
+<div class="stats-grid" id="stats"></div>
+
+<!-- Chart -->
+<div class="legend">
+  <span><span class="legend-dot" style="background:#1D9E75"></span> Lightning (NoOnes)</span>
+  <span id="oc-leg" style="display:flex;align-items:center;gap:4px;"><span style="width:16px;height:2px;background:#E24B4A;display:inline-block;border-top:2px dashed #E24B4A;"></span> On-chain (samma spread)</span>
+</div>
+<div class="chart-wrap"><canvas id="mainchart"></canvas></div>
+
+<!-- Dynamic note -->
+<div class="note" id="note"></div>
+
+<!-- Info cards -->
+<div class="two-col">
+  <div class="info-card green">
+    <div class="info-title">Varför Lightning på NoOnes är annorlunda mot egen nod</div>
+    <p>Ingen kanalhantering. Ingen uptime-övervakning. Ingen channel.db-backup. BTC-benet är en managed service. Du fokuserar 100% på handelsbeslut och fiat-verifiering — det enda steget som faktiskt kräver ditt omdöme.</p>
+  </div>
+  <div class="info-card amber">
+    <div class="info-title">Fiat-benet är nu din verkliga flaskhals</div>
+    <p>Köparen måste skicka lokala pengar via First Bank of Nigeria, Mercado Pago, Zelle etc. Det tar 15–30 min och kan inte automatiseras bort. Lightning eliminerar BTC-väntan men inte fiat-väntan. Det är ett annorlunda tak än vad som simulerades med dedikerad nod.</p>
+  </div>
+</div>
+
+<!-- Assumptions -->
+<div class="assumptions">
+  <strong>Modellens parametrar</strong> — $500 start. Cykler/dag = (60 / fiat-minuter) × aktiva timmar. Trade-size: $60 bas, max $200 (kapital låses per aktiv trade). Rep-ramp dag 1–10 (startar 35% kapacitet). Chargeback: 1.2%/vecka (Lightning-köpare är mer teknikvana). On-chain: samma spread men cykler begränsas av ~45 min genomsnittlig confirmation-tid. Ingen skatt modellerad.
+</div>
+
+<hr class="divider">
+
+<!-- Explanatory text above chart context -->
+<div class="section">
+  <h2>Vad som faktiskt förändras med NoOnes Lightning</h2>
+
+  <p>När Lightning-integrationen diskuterades tidigare antog vi att du skulle behöva köra din egen nod, hantera kanallikviditet, övervaka uptime 24/7 och hantera channel.db-backups. Det var ett separat ingenjörsprojekt som skulle ta månader att lära sig parallellt med att du också lär dig P2P-handelsmekaniken.</p>
+
+  <p>NoOnes inbyggda Lightning-wallet eliminerar allt det. Du använder deras Lightning-infrastruktur som en tjänst — du skapar en invoice, köparen betalar, BTC är i din wallet på sekunder. Ingen nod att underhålla. Ingen kanal att rebalansera. Ingen infrastruktur att hålla igång.</p>
+
+  <p><strong>Det viktiga förtydligandet:</strong> Lightning löser BTC-benet av din trade. Fiat-benet — att köparen faktiskt skickar pengar via First Bank of Nigeria eller Mercado Pago och att du verifierar det — tar fortfarande 15–30 minuter och kräver ditt aktiva omdöme. Det är nu din verkliga flaskhals, inte BTC-settlement.</p>
+
+  <p>Det innebär att den realistiska hastighetsfördelen mot on-chain är en faktor 2–4x beroende på hur snabb din fiat-verifiering är, inte de teoretiska 100x som simulerades med en dedikerad nod och maximalt antal cykler. Skillnaden är ändå stor och verklig — on-chain begränsas av ~45 minuters confirmation-tid, medan din Lightning-cykel begränsas av hur snabbt motparten kan skicka Mercado Pago eller Interbank-överföring.</p>
+</div>
+
+<div class="section">
+  <h2>Varför spreaden är strukturellt stabil</h2>
+
+  <p>Det kritiska skillnaden mot klassiskt P2P-arbitrage är spreaens källa. I ett klassiskt arbitrage-upplägg (köp billigt P2P, sälj på spot) drivs ditt övertag av informationsasymmetri — du vet vad spot-priset är och säljaren kanske inte bryr sig. Det övertaget eroderar med tid: motparter lär sig att du är professionell, prisinformation sprids, och spreaden komprimeras mot noll.</p>
+
+  <p>I on/off-ramp-modellen du nu kör är spreaden driven av strukturella ekonomiska förhållanden. En argentinare som betalar 9% premium för Bitcoin gör det inte för att de inte vet vad spot-priset är — de vet det. De betalar premium för <em>access</em>: access till en dollartillgång utanför det argentinska banksystemet, i ett land med 100%+ inflation och valutakontroller som begränsar hur mycket dollar de kan köpa via banker. Det är en tjänst du levererar, inte ett informationsövertag du exploaterar.</p>
+
+  <p>Praktisk konsekvens: spreaden eroderar inte på samma sätt mot din $4k-gräns. Valutakontroller i Argentina, Nigeria och Venezuela är politiska fenomen som förändras i månaders och års takt, inte dagarnas. Det ger verksamheten en mer defensible och förutsägbar marginal.</p>
+</div>
+
+<div class="section">
+  <h2>Den verkliga arkitekturen — ett beslut kvarstår</h2>
+
+  <p>NoOnes Lightning-wallet förändrar inte ekonomin i simuleringen nämnvärt — spreaden och kapitalet är desamma. Det den förändrar är <strong>vad du behöver lära dig och hantera</strong>. Hela Lightning-nodsdiskussionen — kanaler, rebalancing, watchtowers — är nu irrelevant för fas 1. Du äger inte infrastrukturen, du använder den som en tjänst.</p>
+
+  <p>Trade-offen är att du inte tjänar routing fees på andras transaktioner, och du är beroende av NoOnes plattformsstabilitet. Men för fas 1 är det rätt avvägning — du eliminerar månaders inlärning och ersätter det med dagar.</p>
+
+  <p><strong>Det enda beslutet som nu påverkar dina faktiska parametrar mer än något annat:</strong> vilken marknad startar du i? De tre primära alternativen har olika riskprofiler:</p>
+
+  <ul>
+    <li><strong>Argentina via Mercado Pago</strong> — hög volym, välbekant för P2P-handlare, snabb fiat-settlement (~15 min), moderate chargeback-risk. Ekonomisk instabilitet driver konsekvent efterfrågan.</li>
+    <li><strong>Nigeria via First Bank of Nigeria / GTBank</strong> — störst volym i Afrika, 15–30 min banköverföringar, högre chargeback-risk på äldre betalningsmetoder. Naira-depreciering driver strukturell efterfrågan.</li>
+    <li><strong>Venezuela via Zelle</strong> — Zelle är USD-denominerat vilket eliminerar valutarisken på fiat-benet, snabb settlement, men lägre total volym och Zelle har begränsningar för kommersiell användning.</li>
+  </ul>
+
+  <p>Rekommendationen är att börja med en enda marknad och en enda betalningsmetod tills du har 20–30 avslutade trades och förstår motpartsbeteendet. Diversifiera sedan.</p>
+</div>
+
+<div class="section">
+  <h2>Skalningslogiken: kapital × velocity</h2>
+
+  <pre>$500 kapital × Lightning velocity = volymen av ett $1,500–$2,000-konto on-chain</pre>
+
+  <p>Det är leverage utan skuld — du lånar inte pengar, du lånar tid. Samma startkapital genererar 2–4x mer volym och därmed 2–4x mer absolut vinst per dag jämfört med on-chain settlement, vid identisk spread. Allt annat lika är fiat-verifieringstiden den enda parametern som separerar Lightning-kurvan från on-chain-kurvan i simuleringen ovan.</p>
+
+  <p>Skalningstaket i den här modellen är inte informationsasymmetri (som i klassiskt arbitrage) eller kanalkapacitet (som med dedikerad Lightning-nod). Det är <strong>din tid och din kapacitet att verifiera fiat-betalningar</strong>. Det är ett mänskligt tak, inte ett tekniskt — vilket innebär att det går att delegera när verksamheten är validerad och kapitalbasen är tillräcklig för att motivera en partner eller assistent.</p>
+</div>
+
+<hr class="divider">
+<footer>NoOnes Lightning P2P Simulator — Genererad mars 2026 · Alla siffror är modellerade estimat, inte garanterade utfall</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const START=500,BASE_TRADE=60,MAX_TRADE=200,REP_DAYS=10,CB_LN=0.012/7,CB_OC=0.025/7;
+const presets={conservative:{spread:6,fiatMin:25,hours:8},realistic:{spread:9,fiatMin:20,hours:10},optimistic:{spread:12,fiatMin:15,hours:12}};
+
+function cpd(fiatMin,hours){return Math.floor((60/fiatMin)*hours);}
+
+function simLN(spread,fiatMin,hours){
+  const cycles=cpd(fiatMin,hours);
+  const capital=[START],profit=[0],volume=[0];
+  let cap=START,cum=0;
+  for(let d=1;d<=30;d++){
+    const rep=d<=REP_DAYS?0.35+0.65*(d/REP_DAYS):1.0;
+    const trades=Math.floor(cycles*rep);
+    const tSize=Math.min(MAX_TRADE,BASE_TRADE+(cap-START)*0.05);
+    const maxSim=Math.floor(cap/tSize);
+    const actual=Math.min(trades,maxSim*3);
+    const vol=actual*tSize;
+    const gross=vol*(spread/100);
+    const cbHit=Math.random()<CB_LN;
+    const cbLoss=cbHit?tSize*(0.6+Math.random()*0.6):0;
+    const net=gross-cbLoss;
+    cap=Math.max(0,cap+net);cum+=net;
+    capital.push(Math.round(cap));profit.push(Math.round(cum));volume.push(Math.round(vol));
+  }
+  return{capital,profit,volume};
+}
+
+function simOC(spread,hours){
+  const cycles=Math.floor(1.3*hours);
+  const capital=[START],profit=[0],volume=[0];
+  let cap=START,cum=0;
+  for(let d=1;d<=30;d++){
+    const rep=d<=14?0.4+0.6*(d/14):1.0;
+    const trades=Math.floor(cycles*rep);
+    const tSize=Math.min(MAX_TRADE,BASE_TRADE+(cap-START)*0.05);
+    const vol=trades*tSize;
+    const gross=vol*(spread/100);
+    const cbHit=Math.random()<CB_OC;
+    const cbLoss=cbHit?tSize*(0.8+Math.random()*0.8):0;
+    const net=gross-cbLoss;
+    cap=Math.max(0,cap+net);cum+=net;
+    capital.push(Math.round(cap));profit.push(Math.round(cum));volume.push(Math.round(vol));
+  }
+  return{capital,profit,volume};
+}
+
+const fmt=v=>'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmtP=v=>(v>=0?'+':'-')+'$'+Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmtV=v=>v>=1000?'$'+(v/1000).toFixed(1)+'k':'$'+Math.round(v);
+const pct=v=>{const p=((v/START)-1)*100;return(p>=0?'+':'')+Math.round(p)+'%';};
+function getDs(mode,d){return mode==='profit'?d.profit:mode==='daily'?d.volume:d.capital;}
+
+let chart;
+
+function update(){
+  const spread=parseFloat(document.getElementById('spread').value);
+  const fiatMin=parseInt(document.getElementById('fiatmin').value);
+  const hours=parseInt(document.getElementById('hours').value);
+  const view=document.getElementById('view').value;
+  const showOC=document.getElementById('showoc').value==='yes';
+
+  document.getElementById('spread-val').textContent=spread;
+  document.getElementById('fiat-val').textContent=fiatMin;
+  document.getElementById('hours-val').textContent=hours;
+
+  const ln=simLN(spread,fiatMin,hours);
+  const oc=simOC(spread,hours);
+  const cycles=cpd(fiatMin,hours);
+  const cpdOC=Math.floor(1.3*hours);
+  const velMult=(cycles/cpdOC).toFixed(1);
+  const monthVol=ln.volume.reduce((a,b)=>a+b,0);
+  const singleCycle=(BASE_TRADE*spread/100).toFixed(2);
+
+  const valFn=(d,i)=>{const ds=getDs(view,d);return view==='profit'?fmtP(ds[i]):view==='daily'?fmtV(ds[i]):fmt(ds[i]);};
+  const subFn=(d,i)=>view==='capital'?pct(d.capital[i]):'cap '+fmt(d.capital[i]);
+
+  [['24',1],['72',3],['7',7],['30',30]].forEach(([id,i])=>{
+    document.getElementById('v'+id).textContent=valFn(ln,i);
+    document.getElementById('s'+id).textContent=subFn(ln,i);
+  });
+
+  document.getElementById('stats').innerHTML=`
+    <div class="card"><div class="lbl">Cykler/dag (LN)</div><div class="val">${cycles}</div><div class="sub">on-chain: ${cpdOC} (${velMult}×)</div></div>
+    <div class="card"><div class="lbl">Vinst/cykel ($60)</div><div class="val">$${singleCycle}</div><div class="sub">vid ${spread}% spread</div></div>
+    <div class="card"><div class="lbl">Månadsvolym</div><div class="val">${fmtV(monthVol)}</div><div class="sub">on-chain ${fmtV(oc.volume.reduce((a,b)=>a+b,0))}</div></div>
+    <div class="card"><div class="lbl">Nettoprofit (mån)</div><div class="val" style="color:${ln.profit[30]>=0?'#1D9E75':'#E24B4A'}">${fmtP(ln.profit[30])}</div><div class="sub">on-chain ${fmtP(oc.profit[30])}</div></div>
+  `;
+
+  document.getElementById('oc-leg').style.display=showOC?'flex':'none';
+
+  const dailyAtEnd=Math.round(BASE_TRADE*(spread/100)*cycles);
+  document.getElementById('note').innerHTML=`Med ${fiatMin} min fiat-verifiering och ${hours} aktiva timmar får du <strong>${cycles} cykler/dag</strong> — jämfört med ${cpdOC} on-chain. Det är en ${velMult}× hastighetsfördel, men inte de 100× som simulerades med dedikerad nod. Anledningen: fiat-benet sätter nu taket, inte BTC-settlement. Dag 30 är din dagliga bruttokapacitet <strong>$${dailyAtEnd.toLocaleString()}</strong>. Spreaden eroderar inte eftersom den är strukturellt driven av valutagreglering, inte informationsasymmetri.`;
+
+  const labels=Array.from({length:31},(_,i)=>i===0?'Start':'D'+i);
+  const lnDs=getDs(view,ln);
+  const ocDs=getDs(view,oc);
+
+  if(chart){
+    chart.data.datasets[0].data=lnDs;
+    chart.data.datasets[1].data=showOC?ocDs:Array(31).fill(null);
+    chart.update('none');
+  } else {
+    chart=new Chart(document.getElementById('mainchart'),{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'Lightning',data:lnDs,borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.07)',fill:true,tension:0.4,pointRadius:0,pointHoverRadius:4,borderWidth:2.5},
+        {label:'On-chain',data:ocDs,borderColor:'#E24B4A',backgroundColor:'transparent',fill:false,tension:0.4,pointRadius:0,borderWidth:1.5,borderDash:[4,3]}
+      ]},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>fmtV(ctx.parsed.y)}}},
+        scales:{
+          x:{ticks:{maxTicksLimit:12,font:{size:11},color:'#888'},grid:{color:'rgba(0,0,0,0.06)'}},
+          y:{ticks:{callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v,font:{size:11},color:'#888'},grid:{color:'rgba(0,0,0,0.06)'}}
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('scenario').addEventListener('change',e=>{
+  const p=presets[e.target.value];
+  if(p){document.getElementById('spread').value=p.spread;document.getElementById('fiatmin').value=p.fiatMin;document.getElementById('hours').value=p.hours;}
+  update();
+});
+['spread','fiatmin','hours'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{document.getElementById('scenario').value='custom';update();});
+});
+document.getElementById('view').addEventListener('change',update);
+document.getElementById('showoc').addEventListener('change',update);
+update();
+</script>
+</body>
+</html>

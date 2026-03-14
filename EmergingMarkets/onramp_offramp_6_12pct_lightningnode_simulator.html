@@ -1,0 +1,289 @@
+
+<div style="padding:1rem 0;">
+
+<div style="padding:10px 14px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem;line-height:1.6;">
+  <strong style="font-weight:500;color:var(--color-text-primary);">Omvänd logik mot tidigare simuleringar.</strong> Du köper BTC på spot-exchange till marknadspris, säljer till P2P-köpare i valutakontrollerade marknader (Argentina, Nigeria, Venezuela) som betalar 6–12% premium. Spreaden är stabil eftersom den drivs av strukturella ekonomiska förhållanden, inte informationsasymmetri som eroderar med tid.
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:1rem;">
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Scenario</label>
+    <select id="scenario" style="width:100%;">
+      <option value="conservative">Konservativt — 6% spread</option>
+      <option value="realistic" selected>Realistiskt — 9% spread</option>
+      <option value="optimistic">Optimistiskt — 12% spread</option>
+      <option value="custom">Eget</option>
+    </select>
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Visa</label>
+    <select id="view" style="width:100%;">
+      <option value="capital">Kapital ($)</option>
+      <option value="profit">Kumulativ vinst ($)</option>
+      <option value="daily">Daglig vinst ($)</option>
+    </select>
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Jämför on-chain</label>
+    <select id="showoc" style="width:100%;">
+      <option value="yes" selected>Visa</option>
+      <option value="no">Dölj</option>
+    </select>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:1.5rem;">
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Spread: <strong id="spread-val">9</strong>%</label>
+    <input type="range" min="4" max="14" step="0.5" value="9" id="spread" style="width:100%;">
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">On-chain cykler/dag: <strong id="oc-cycles-val">4</strong></label>
+    <input type="range" min="1" max="10" step="1" value="4" id="oc-cycles" style="width:100%;">
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Lightning cykler/dag: <strong id="ln-cycles-val">80</strong></label>
+    <input type="range" min="10" max="200" step="10" value="80" id="ln-cycles" style="width:100%;">
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem;">
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">24h — Lightning</p>
+    <p style="font-size:18px;font-weight:500;margin:0;" id="v24ln">—</p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s24ln"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">72h — Lightning</p>
+    <p style="font-size:18px;font-weight:500;margin:0;" id="v72ln">—</p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s72ln"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">1 vecka — Lightning</p>
+    <p style="font-size:18px;font-weight:500;margin:0;" id="v7ln">—</p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s7ln"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">1 månad — Lightning</p>
+    <p style="font-size:18px;font-weight:500;margin:0;" id="v30ln">—</p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s30ln"></p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.5rem;" id="stats"></div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:12px;color:var(--color-text-secondary);align-items:center;">
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;"></span>Lightning</span>
+  <span id="oc-legend" style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:#E24B4A;display:inline-block;border-top:2px dashed #E24B4A;"></span>On-chain</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:#FAC775;display:inline-block;"></span>Likviditetsgolv (capital floor)</span>
+</div>
+
+<div style="position:relative;width:100%;height:260px;">
+  <canvas id="chart"></canvas>
+</div>
+
+<div id="note" style="margin-top:1rem;padding:12px 14px;background:var(--color-background-secondary);border-radius:8px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;"></div>
+
+<div style="margin-top:1.5rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+  <div style="padding:12px 14px;border-radius:8px;border-top:2px solid #1D9E75;background:var(--color-background-secondary);">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">Lightning — varför snabbare</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;">BTC-benet settlas på sekunder. Kapital återcirkuleras direkt. Ingen väntetid på block-confirmation. Fiat-benet (Swish, bank) är fortfarande din flaskhals.</div>
+  </div>
+  <div style="padding:12px 14px;border-radius:8px;border-top:2px solid #E24B4A;background:var(--color-background-secondary);">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">On-chain — varför långsammare</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;">30–60 min confirmation per cykel. Kapitalet är låst under den tiden. 4 cykler/dag är optimistiskt. Fees äter också in i marginalen vid låga belopp.</div>
+  </div>
+  <div style="padding:12px 14px;border-radius:8px;border-top:2px solid #FAC775;background:var(--color-background-secondary);">
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:4px;">Strukturell stabilitet</div>
+    <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;">6–12% spread eroderar inte på samma sätt som informationsarbitrage. Valutakontroller i Argentina/Nigeria är politiska — de försvinner inte nästa vecka. Det är en mer defensible position.</div>
+  </div>
+</div>
+
+<div style="margin-top:12px;padding:12px 14px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);font-size:12px;color:var(--color-text-secondary);line-height:1.7;">
+  <strong style="font-weight:500;color:var(--color-text-primary);">Modellens antaganden</strong> — $500 startkapital. Trade-size fast vid $60 bas, max $150 (kapital låses per aktiv trade). On-chain: confirmation-tid begränsar till N cykler/dag, 2.5% chargeback-risk/vecka. Lightning: N cykler/dag begränsat av kanalkapacitet ($3k/dag) och tillgänglig tid, 0.8% chargeback-risk/vecka (teknikvana motparter). Reputation-ramp dag 1–10. Ingen skatt modellerad.
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const START = 500;
+const BASE_TRADE = 60;
+const MAX_TRADE = 150;
+const CHAN_CAP = 3000;
+const REP_DAYS = 10;
+
+const presets = {
+  conservative: { spread: 6,  ocCycles: 3,  lnCycles: 60  },
+  realistic:    { spread: 9,  ocCycles: 4,  lnCycles: 80  },
+  optimistic:   { spread: 12, ocCycles: 5,  lnCycles: 120 }
+};
+
+function simOC(spread, cyclesPerDay) {
+  const capital=[START], profit=[0], volume=[0];
+  let cap=START, cum=0;
+  for(let d=1;d<=30;d++){
+    const rep = d<=REP_DAYS ? 0.4+0.6*(d/REP_DAYS) : 1.0;
+    const trades = Math.floor(cyclesPerDay * rep);
+    const tSize = Math.min(MAX_TRADE, BASE_TRADE + (cap-START)*0.04);
+    const vol = trades * tSize;
+    const gross = vol * (spread/100);
+    const cbHit = Math.random() < (0.025/7);
+    const cbLoss = cbHit ? tSize * (0.8 + Math.random()*0.8) : 0;
+    const net = gross - cbLoss;
+    cap = Math.max(0, cap+net);
+    cum += net;
+    capital.push(Math.round(cap));
+    profit.push(Math.round(cum));
+    volume.push(Math.round(vol));
+  }
+  return {capital, profit, volume};
+}
+
+function simLN(spread, cyclesPerDay) {
+  const capital=[START], profit=[0], volume=[0];
+  let cap=START, cum=0;
+  for(let d=1;d<=30;d++){
+    const rep = d<=REP_DAYS ? 0.3+0.7*(d/REP_DAYS) : 1.0;
+    const tSize = Math.min(MAX_TRADE, BASE_TRADE + (cap-START)*0.04);
+    const rawVol = tSize * Math.floor(cyclesPerDay * rep);
+    const vol = Math.min(rawVol, CHAN_CAP);
+    const gross = vol * (spread/100);
+    const cbHit = Math.random() < (0.008/7);
+    const cbLoss = cbHit ? tSize*(0.5+Math.random()*0.5) : 0;
+    const net = gross - cbLoss;
+    cap = Math.max(0, cap+net);
+    cum += net;
+    capital.push(Math.round(cap));
+    profit.push(Math.round(cum));
+    volume.push(Math.round(vol));
+  }
+  return {capital, profit, volume};
+}
+
+const fmt  = v => '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmtP = v => (v>=0?'+':'-') + '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmtV = v => v>=1000 ? '$'+(v/1000).toFixed(1)+'k' : '$'+Math.round(v);
+const pct  = v => { const p=((v/START)-1)*100; return (p>=0?'+':'')+Math.round(p)+'%'; };
+
+function getDs(mode, d) {
+  return mode==='profit' ? d.profit : mode==='daily' ? d.volume : d.capital;
+}
+
+let chart;
+
+function update() {
+  const spread    = parseFloat(document.getElementById('spread').value);
+  const ocCycles  = parseInt(document.getElementById('oc-cycles').value);
+  const lnCycles  = parseInt(document.getElementById('ln-cycles').value);
+  const view      = document.getElementById('view').value;
+  const showOC    = document.getElementById('showoc').value === 'yes';
+
+  document.getElementById('spread-val').textContent    = spread;
+  document.getElementById('oc-cycles-val').textContent = ocCycles;
+  document.getElementById('ln-cycles-val').textContent = lnCycles;
+
+  const ln = simLN(spread, lnCycles);
+  const oc = simOC(spread, ocCycles);
+
+  const monthVolLN = ln.volume.reduce((a,b)=>a+b,0);
+  const monthVolOC = oc.volume.reduce((a,b)=>a+b,0);
+  const velMult    = Math.round(lnCycles / ocCycles);
+
+  // Milestone cards
+  const valFn = (d,i) => {
+    const ds = getDs(view, d);
+    return view==='profit' ? fmtP(ds[i]) : view==='daily' ? fmtV(ds[i]) : fmt(ds[i]);
+  };
+  const subFn = (d,i) => {
+    return view==='capital' ? pct(d.capital[i]) : 'cap '+fmt(d.capital[i]);
+  };
+  [['24ln',1],['72ln',3],['7ln',7],['30ln',30]].forEach(([id,i]) => {
+    document.getElementById('v'+id).textContent = valFn(ln, i);
+    document.getElementById('s'+id).textContent = subFn(ln, i);
+  });
+
+  // Stats row
+  const oneDayCycle = (BASE_TRADE * (spread/100)).toFixed(2);
+  document.getElementById('stats').innerHTML = `
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">Vinst per cykel ($60 trade)</div>
+      <div style="font-size:16px;font-weight:500;">$${oneDayCycle}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">vid ${spread}% spread</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">Månadsvolym Lightning</div>
+      <div style="font-size:16px;font-weight:500;">${fmtV(monthVolLN)}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">vs on-chain ${fmtV(monthVolOC)}</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">Nettoprofit månad</div>
+      <div style="font-size:16px;font-weight:500;color:${ln.profit[30]>=0?'#1D9E75':'#E24B4A'};">${fmtP(ln.profit[30])}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">on-chain ${fmtP(oc.profit[30])}</div>
+    </div>
+  `;
+
+  // Note
+  const note = document.getElementById('note');
+  const channelHit = ln.capital.findIndex((v,i)=>i>0&&v>CHAN_CAP*0.85);
+  const singleCycleRevenue = (BASE_TRADE * spread/100).toFixed(2);
+  if(channelHit>0&&channelHit<=30){
+    note.innerHTML = `<strong style="color:var(--color-text-primary);">Kanalkapacitetstaket nås runt dag ${channelHit}.</strong> En ${spread}% spread ger $${singleCycleRevenue} per $60-trade. Med Lightning och ${lnCycles} cykler/dag är det <strong style="color:var(--color-text-primary);">$${Math.round(BASE_TRADE*(spread/100)*lnCycles)}/dag</strong> i brutto-potential — men kanalkapaciteten på $${CHAN_CAP.toLocaleString()}/dag begränsar flödet. Nästa steg: öppna fler kanaler eller arbeta med en LSP för mer inbound liquidity.`;
+  } else {
+    note.innerHTML = `En ${spread}% spread ger $${singleCycleRevenue} per $60-trade. Med Lightning på ${lnCycles} cykler/dag är bruttokapaciteten <strong style="color:var(--color-text-primary);">$${Math.round(BASE_TRADE*(spread/100)*lnCycles)}/dag</strong> — men kanalkapaciteten ($${CHAN_CAP.toLocaleString()}/dag) är inte bottleneck ännu. Spreaden på dessa marknader är strukturell: valutakontroller i Argentina och Nigeria är politiska fenomen, inte information som kan arbitrageras bort. Det gör positionen mer defensible än klassiskt P2P-arbitrage.`;
+  }
+
+  document.getElementById('oc-legend').style.display = showOC ? 'flex' : 'none';
+
+  const labels = Array.from({length:31},(_,i)=>i===0?'Start':'D'+i);
+  const lnDs = getDs(view, ln);
+  const ocDs = getDs(view, oc);
+  const floorLine = view==='capital' ? Array(31).fill(START) : Array(31).fill(null);
+
+  if(chart){
+    chart.data.datasets[0].data = lnDs;
+    chart.data.datasets[1].data = showOC ? ocDs : Array(31).fill(null);
+    chart.data.datasets[2].data = floorLine;
+    chart.update('none');
+  } else {
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label:'Lightning', data:lnDs, borderColor:'#1D9E75', backgroundColor:'rgba(29,158,117,0.07)', fill:true, tension:0.4, pointRadius:0, pointHoverRadius:4, borderWidth:2.5 },
+          { label:'On-chain',  data:ocDs, borderColor:'#E24B4A', backgroundColor:'transparent', fill:false, tension:0.4, pointRadius:0, borderWidth:1.5, borderDash:[4,3] },
+          { label:'Floor',     data:floorLine, borderColor:'#FAC775', backgroundColor:'transparent', fill:false, tension:0, pointRadius:0, borderWidth:1, borderDash:[5,4] }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: { legend:{display:false}, tooltip:{callbacks:{label:ctx=>fmtV(ctx.parsed.y)}} },
+        scales: {
+          x: { ticks:{maxTicksLimit:12,font:{size:11},color:'#888780'}, grid:{color:'rgba(136,135,128,0.10)'} },
+          y: { ticks:{callback:v=>v>=1000?'$'+(v/1000).toFixed(0)+'k':'$'+v,font:{size:11},color:'#888780'}, grid:{color:'rgba(136,135,128,0.10)'} }
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('scenario').addEventListener('change', e => {
+  const p = presets[e.target.value];
+  if(p){
+    document.getElementById('spread').value    = p.spread;
+    document.getElementById('oc-cycles').value = p.ocCycles;
+    document.getElementById('ln-cycles').value = p.lnCycles;
+  }
+  update();
+});
+['spread','oc-cycles','ln-cycles'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById('scenario').value = 'custom';
+    update();
+  });
+});
+document.getElementById('view').addEventListener('change', update);
+document.getElementById('showoc').addEventListener('change', update);
+update();
+</script>

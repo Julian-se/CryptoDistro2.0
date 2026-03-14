@@ -1,0 +1,311 @@
+
+<div style="padding:1rem 0;">
+
+<div style="padding:10px 14px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem;line-height:1.6;">
+  <strong style="font-weight:500;color:var(--color-text-primary);">Emerging market regler</strong> — Argentina/Nigeria/Venezuela. 6–12% spread existerar men deal flow är begränsat: motparter har valutakontroller, inte en orderbok. Max 3–5 trades/dag on-chain (hitta rätt motpart tar tid). Lightning löser inte fiat-benet — men snabbar BTC-rotation mellan marknader.
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1rem;">
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Marknad / scenario</label>
+    <select id="scenario" style="width:100%;">
+      <option value="nigeria">Nigeria (6–8%)</option>
+      <option value="argentina" selected>Argentina (8–10%)</option>
+      <option value="venezuela">Venezuela (10–12%)</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Visa</label>
+    <select id="view" style="width:100%;">
+      <option value="capital">Kapital ($)</option>
+      <option value="profit">Ackumulerad vinst ($)</option>
+      <option value="daily">Daglig vinst ($)</option>
+    </select>
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;">Tidsfönster</label>
+    <select id="timeframe" style="width:100%;">
+      <option value="30">30 dagar</option>
+      <option value="60" selected>60 dagar</option>
+      <option value="90">90 dagar</option>
+    </select>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:1.5rem;">
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Spread per trade: <strong id="spread-val">9.0</strong>%</label>
+    <input type="range" min="2" max="14" step="0.5" value="9" id="spread" style="width:100%;">
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Trades/dag (on-chain): <strong id="trades-val">4</strong></label>
+    <input type="range" min="1" max="8" step="1" value="4" id="trades" style="width:100%;">
+  </div>
+  <div>
+    <label style="font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:6px;">Trade size: $<strong id="size-val">120</strong></label>
+    <input type="range" min="50" max="500" step="10" value="120" id="size" style="width:100%;">
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem;">
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">24h</p>
+    <p style="font-size:16px;font-weight:500;margin:0;" id="v24"></p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s24"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">72h</p>
+    <p style="font-size:16px;font-weight:500;margin:0;" id="v72"></p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s72"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">1 vecka</p>
+    <p style="font-size:16px;font-weight:500;margin:0;" id="v7"></p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s7"></p>
+  </div>
+  <div style="background:var(--color-background-secondary);border-radius:8px;padding:12px 14px;">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 3px;">1 månad</p>
+    <p style="font-size:16px;font-weight:500;margin:0;" id="v30"></p>
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:3px 0 0;" id="s30"></p>
+  </div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:8px;font-size:12px;color:var(--color-text-secondary);">
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#1D9E75;"></span>On-chain</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:2px;background:#378ADD;"></span>Lightning-assisted</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:#FAC775;display:inline-block;"></span>Likviditetstak ($5k)</span>
+</div>
+
+<div style="position:relative;width:100%;height:260px;margin-bottom:1.5rem;">
+  <canvas id="main-chart"></canvas>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1rem;" id="stats"></div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem;">
+  <div style="border-radius:8px;padding:12px 14px;border-top:2px solid #1D9E75;background:var(--color-background-secondary);">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 4px;">On-chain flöde</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin:0;">Köp BTC via P2P → vänta on-chain confirm (30–60 min) → sälj spot. Kapital låst under hela cykeln. Max 3–5 trades/dag i dessa marknader p.g.a. deal-sökning.</p>
+  </div>
+  <div style="border-radius:8px;padding:12px 14px;border-top:2px solid #378ADD;background:var(--color-background-secondary);">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 4px;">Lightning-assisted flöde</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin:0;">Fiat-benet är fortfarande manuellt (valutakontroller). Men BTC-rotation mellan marknader (Argentina → Nigeria) går via Lightning på sekunder istället för on-chain timmar.</p>
+  </div>
+  <div style="border-radius:8px;padding:12px 14px;border-top:2px solid #E24B4A;background:var(--color-background-secondary);">
+    <p style="font-size:11px;color:var(--color-text-secondary);margin:0 0 4px;">Verkliga friktioner</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin:0;">Chargeback-risk ~4%/vecka (högre i dessa marknader). KYC-flagga vid volym >$2k/dag. Valutakontroller begränsar fiat-uttag. Motpart-risk är primära risken.</p>
+  </div>
+</div>
+
+<div id="insight" style="padding:12px 14px;background:var(--color-background-secondary);border-radius:8px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;"></div>
+
+<div style="margin-top:12px;padding:12px 14px;border-radius:8px;border:0.5px solid var(--color-border-tertiary);font-size:12px;color:var(--color-text-secondary);line-height:1.7;">
+  <strong style="font-weight:500;color:var(--color-text-primary);">Modellens regler</strong><br>
+  $500 startkapital · Trade size fast (din slider) · On-chain: max N trades/dag begränsat av deal-sökning i valutakontroll-marknader · Lightning-assisted: +40% fler cykler via snabbare BTC-rotation mellan marknader · Likviditetstak $5k (lägre än mogen marknad — synlighet är farligare här) · Chargeback 4%/vecka · Friction/KYC-event 2%/vecka från dag 14 · Ingen skatt modellerad
+</div>
+
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const START = 500;
+const CEIL = 5000;
+const COMPRESS_START = 2500;
+const CB_RATE = 0.04 / 7;
+const KYC_RATE = 0.02 / 7;
+
+const presets = {
+  nigeria:    { spread: 7.0,  trades: 4, size: 100 },
+  argentina:  { spread: 9.0,  trades: 4, size: 120 },
+  venezuela:  { spread: 11.0, trades: 3, size: 100 },
+};
+
+function spreadMult(cap) {
+  if (cap <= COMPRESS_START) return 1.0;
+  if (cap >= CEIL) return 0.2;
+  const t = (cap - COMPRESS_START) / (CEIL - COMPRESS_START);
+  return 1.0 - 0.8 * t;
+}
+
+function simulate(spreadPct, tradesPerDay, tradeSize, days, lightningBoost) {
+  const capital = [START], profit = [0], daily = [0];
+  let cap = START, cumP = 0;
+  const boost = lightningBoost ? 1.4 : 1.0;
+
+  for (let d = 1; d <= days; d++) {
+    const rep = d <= 10 ? 0.4 + 0.6 * (d / 10) : 1.0;
+    const effectiveTrades = Math.min(
+      Math.floor(tradesPerDay * rep * boost),
+      Math.floor(cap / tradeSize)
+    );
+    const effSpread = spreadPct * spreadMult(cap);
+    const vol = effectiveTrades * tradeSize;
+    const gross = vol * (effSpread / 100);
+
+    const cb = Math.random() < CB_RATE ? tradeSize * (0.8 + Math.random()) : 0;
+    const kyc = d >= 14 && Math.random() < KYC_RATE ? cap * 0.015 : 0;
+
+    const net = gross - cb - kyc;
+    cap = Math.max(0, cap + net);
+    cumP += net;
+
+    capital.push(Math.round(cap));
+    profit.push(Math.round(cumP));
+    daily.push(Math.round(gross - cb - kyc));
+  }
+  return { capital, profit, daily };
+}
+
+const fmt  = v => '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+const fmtP = v => (v >= 0 ? '+' : '−') + '$' + Math.round(Math.abs(v)).toLocaleString('en-US');
+const pct  = v => { const p = ((v / START) - 1) * 100; return (p >= 0 ? '+' : '') + Math.round(p) + '%'; };
+const fmtV = v => v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : '$' + Math.round(v);
+
+let chart;
+
+function getDs(mode, d) {
+  return mode === 'daily' ? d.daily : mode === 'profit' ? d.profit : d.capital;
+}
+
+function update() {
+  const spread = parseFloat(document.getElementById('spread').value);
+  const trades = parseInt(document.getElementById('trades').value);
+  const size   = parseInt(document.getElementById('size').value);
+  const view   = document.getElementById('view').value;
+  const days   = parseInt(document.getElementById('timeframe').value);
+
+  document.getElementById('spread-val').textContent = spread.toFixed(1);
+  document.getElementById('trades-val').textContent = trades;
+  document.getElementById('size-val').textContent   = size;
+
+  const oc = simulate(spread, trades, size, days, false);
+  const ln = simulate(spread, trades, size, days, true);
+
+  const valFn = (d, i) => {
+    if (i >= d.capital.length) i = d.capital.length - 1;
+    const ds = getDs(view, d);
+    return view === 'capital' ? fmt(ds[i]) : fmtP(ds[i]);
+  };
+  const subFn = (d, i) => {
+    if (i >= d.capital.length) i = d.capital.length - 1;
+    return view === 'capital' ? pct(d.capital[i]) : fmt(d.capital[i]) + ' cap';
+  };
+
+  const pairs = [['24', 1], ['72', 3], ['7', 7], ['30', 30]];
+  pairs.forEach(([id, i]) => {
+    const idx = Math.min(i, days);
+    document.getElementById('v' + id).textContent = valFn(ln, idx);
+    document.getElementById('s' + id).textContent = 'LN ' + subFn(ln, idx);
+  });
+
+  const lnProfit30 = Math.min(30, days);
+  const ocProfit30 = Math.min(30, days);
+  const monthVolOC = oc.daily.slice(1, ocProfit30 + 1).reduce((a, b) => a + b, 0);
+  const lnTradesPerDay = Math.floor(trades * 1.4);
+
+  document.getElementById('stats').innerHTML = `
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">OC trades/dag</div>
+      <div style="font-size:16px;font-weight:500;">${trades}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">LN-assisted: ${lnTradesPerDay} (+40%)</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">OC profit (månad)</div>
+      <div style="font-size:16px;font-weight:500;color:${oc.profit[ocProfit30] >= 0 ? '#1D9E75' : '#E24B4A'};">${fmtP(oc.profit[ocProfit30])}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">cap ${fmt(oc.capital[ocProfit30])}</div>
+    </div>
+    <div style="background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;">
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:3px;">LN profit (månad)</div>
+      <div style="font-size:16px;font-weight:500;color:${ln.profit[lnProfit30] >= 0 ? '#378ADD' : '#E24B4A'};">${fmtP(ln.profit[lnProfit30])}</div>
+      <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px;">cap ${fmt(ln.capital[lnProfit30])}</div>
+    </div>
+  `;
+
+  const labels = Array.from({ length: days + 1 }, (_, i) => i === 0 ? 'Start' : 'D' + i);
+  const ocDs = getDs(view, oc);
+  const lnDs = getDs(view, ln);
+  const capLine = view === 'capital' ? Array(days + 1).fill(CEIL) : Array(days + 1).fill(null);
+
+  const ceilHit = oc.capital.findIndex((v, i) => i > 0 && v > COMPRESS_START * 0.9);
+
+  const insight = document.getElementById('insight');
+  const spreadEff = (spread * spreadMult(oc.capital[Math.min(30, days)])).toFixed(1);
+  if (ceilHit > 0 && ceilHit <= days) {
+    insight.innerHTML = `Spreadkompression börjar runt <strong style="color:var(--color-text-primary);">dag ${ceilHit}</strong> — vid $${COMPRESS_START.toLocaleString()} börjar du synas för plattformarna och lokala motparter justerar sina priser. Effektiv spread vid månadens slut: ~${spreadEff}% (ned från ${spread}%). Lightning-benet ger +40% cykler via snabbare BTC-rotation mellan t.ex. Argentina och Nigeria — du köper i en marknad, skickar via Lightning, säljer i en annan. Det är den verkliga Lightning-synerginfaktorn i dessa marknader, inte settlement-hastigheten i sig.`;
+  } else {
+    insight.innerHTML = `Kapitalet är fortfarande under kompressionszonens tröskel ($${COMPRESS_START.toLocaleString()}). Full ${spread}% spread hela vägen. Lightning-boostens +40% cykler via multi-market rotation (Argentina→Nigeria→Venezuela) ger dig ${fmtP(ln.profit[Math.min(30, days)] - oc.profit[Math.min(30, days)])} extra vinst på 30 dagar jämfört med ren on-chain. Fiat-benet är fortfarande manuellt oavsett — Lightning löser BTC-rotationen, inte valutakontrollerna.`;
+  }
+
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = ocDs;
+    chart.data.datasets[1].data = lnDs;
+    chart.data.datasets[2].data = capLine;
+    chart.update('none');
+  } else {
+    chart = new Chart(document.getElementById('main-chart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'On-chain',
+            data: ocDs,
+            borderColor: '#1D9E75',
+            backgroundColor: 'rgba(29,158,117,0.06)',
+            fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2
+          },
+          {
+            label: 'Lightning-assisted',
+            data: lnDs,
+            borderColor: '#378ADD',
+            backgroundColor: 'rgba(55,138,221,0.06)',
+            fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 4, borderWidth: 2
+          },
+          {
+            label: 'Likviditetstak',
+            data: capLine,
+            borderColor: '#FAC775',
+            backgroundColor: 'transparent',
+            fill: false, pointRadius: 0, borderWidth: 1.5, borderDash: [6, 4]
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => fmtV(ctx.parsed.y) } }
+        },
+        scales: {
+          x: { ticks: { maxTicksLimit: 12, font: { size: 11 }, color: '#888780' }, grid: { color: 'rgba(136,135,128,0.10)' } },
+          y: {
+            ticks: { callback: v => v >= 1000 ? '$' + (v / 1000).toFixed(0) + 'k' : '$' + v, font: { size: 11 }, color: '#888780' },
+            grid: { color: 'rgba(136,135,128,0.10)' }
+          }
+        }
+      }
+    });
+  }
+}
+
+document.getElementById('scenario').addEventListener('change', e => {
+  const p = presets[e.target.value];
+  if (p) {
+    document.getElementById('spread').value = p.spread;
+    document.getElementById('trades').value = p.trades;
+    document.getElementById('size').value   = p.size;
+  }
+  update();
+});
+['spread', 'trades', 'size'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById('scenario').value = 'custom';
+    update();
+  });
+});
+document.getElementById('view').addEventListener('change', update);
+document.getElementById('timeframe').addEventListener('change', update);
+
+update();
+</script>

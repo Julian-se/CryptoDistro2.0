@@ -1,0 +1,60 @@
+#Intital correction that made it possible
+#you got it mostly right, one thing that is trivial to the design is that the fiat dont go in to the "noones fiat" system, when a buyer send his fiat it is to an external wallet outside the noones ecosystem, for exempel skrill,zelle, mobile money in Nigeria or Mercado Pago in Argentina). And now that fiat has to find its way to the noones wallet for a refill. This is where i need an wallet with lightning node that i can buy crypto inside that app from one of these sevices(skrill,zelle, mobile money in Nigeria or Mercado Pago in Argentina) and then send the bitcoin over the lightning node to my noones wallet and start the process agin
+**Got it — thanks for the precise correction.**  
+
+Fiat from the buyer lands **outside** NoOnes (Skrill, Zelle, Nigerian mobile money like Opay/Paystack, or Mercado Pago).  
+You then have to **buy BTC** somewhere using that external fiat, and finally **send the BTC via Lightning** to your NoOnes Lightning deposit address to refill your trading stock.
+
+You want **one Lightning wallet/app** that:
+- Lets you buy BTC **directly inside the app** using Skrill / Zelle / Nigerian mobile money / Mercado Pago, **and**
+- Then sends that BTC over Lightning to NoOnes.
+
+### What actually exists in 2026 (after checking current services)
+
+**No single Lightning wallet does all of that perfectly in one app.**  
+Lightning wallets (Phoenix, Blink, Wallet of Satoshi, Muun, etc.) are mostly non-custodial and **do not have built-in fiat on-ramps** for Skrill, Zelle, Opay, or Mercado Pago. Those payment methods are too regulated for pure Lightning wallets to integrate directly (KYC/AML reasons).
+
+Here’s the **closest real-world systems** that get you as close as possible (minimal steps, high velocity):
+
+**1. Best for Skrill**  
+- Use the **Skrill app itself** (it has a built-in “Buy Crypto” section in many countries).  
+- Buy BTC directly inside Skrill with your Skrill balance.  
+- Withdraw the BTC to a Lightning wallet (Phoenix or Blink) → then send Lightning to your NoOnes deposit address.  
+- Speed: Buy in Skrill is instant; Lightning send to NoOnes is 2–10 seconds.  
+- This is the closest to “one app for buy + Lightning send”.
+
+**2. Best for Nigerian mobile money (Opay, Paystack, etc.)**  
+- **iPayBTC** app (Africa-focused): Buy BTC directly with local mobile money/bank transfer inside the app.  
+- Withdraw instantly to any Lightning wallet (Phoenix, Blink, Wallet of Satoshi).  
+- From there send Lightning to NoOnes deposit.  
+- Speed: Buy + withdraw in under 2–5 minutes total. Many Nigerian merchants use this exact flow.
+
+**3. Best for Mercado Pago (Argentina)**  
+- No direct Lightning wallet has Mercado Pago built-in.  
+- Closest: Use **MT Pelerin** or **Lightning Pay** services (you buy sats directly to any Lightning wallet address via Mercado Pago).  
+- Or go through a fast ramp like **Ramp Network** / **MoonPay** that accepts Mercado Pago in some setups and sends straight to Lightning.  
+- Then from your Lightning wallet (Phoenix/Blink) send to NoOnes.  
+- Speed: 3–8 minutes end-to-end.
+
+**4. Best for Zelle (US)**  
+- Zelle is the hardest (US banks flag crypto heavily).  
+- Use a ramp like **Ramp Network** or **MoonPay** that accepts bank transfers (Zelle-linked), buy BTC, send to Lightning wallet, then to NoOnes.  
+- No clean “inside one Lightning wallet” option.
+
+### Recommended Lightning wallets for the final send to NoOnes
+(These are the ones you actually use to send the bought BTC to NoOnes Lightning deposit):
+
+- **Phoenix** (best overall – self-custodial, reliable liquidity, 5–10 sec sends)  
+- **Blink** (fastest for small amounts, sub-2 sec in many cases)  
+- **Wallet of Satoshi** (easiest UI, instant)  
+- **Zeus** or **Breez** (if you want more control at higher volume)
+
+### The practical loop you can run today
+1. Buyer pays you via Skrill / Mercado Pago / Opay → fiat in external service.  
+2. Buy BTC in the best ramp for that method (Skrill app / iPayBTC / MT Pelerin / Ramp).  
+3. Send the BTC via Lightning from Phoenix or Blink to your NoOnes Lightning deposit address (2–10 seconds).  
+4. Stock refilled in NoOnes → post next sell ad.
+
+This is the tightest system that exists right now. It keeps the Lightning part inside a real Lightning wallet (as you wanted) and minimizes external hops.
+
+
