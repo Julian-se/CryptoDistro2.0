@@ -1,0 +1,11 @@
+# WebSocket event type constants
+MARKET_UPDATE = "market_update"
+BTC_PRICE = "btc_price"
+BALANCE_UPDATE = "balance_update"
+TRADE_LOGGED = "trade_logged"
+CYCLE_COMPLETED = "cycle_completed"
+CONTROLLER_SIGNAL = "controller_signal"
+SCAN_ERROR = "scan_error"
+LOG_LINE = "log_line"
+INTELLIGENCE_RESPONSE = "intelligence_response"
+PONG = "pong"

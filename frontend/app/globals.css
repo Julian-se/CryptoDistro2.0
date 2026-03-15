@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-base:     #0a0a0a;
+  --bg-surface:  #0d0d0d;
+  --bg-card:     #141414;
+  --bg-border:   #242424;
+  --bg-sub:      #1a1a1a;
+  --accent-green:        #3ECF8E;
+  --accent-green-dim:    rgba(62, 207, 142, 0.08);
+  --accent-green-border: rgba(62, 207, 142, 0.20);
+  --accent-orange: #F5A623;
+  --accent-red:    #FF4757;
+  --accent-blue:   #3B82F6;
+  --text-primary:  #f0f0f0;
+  --text-muted:    #505050;
+  --text-dim:      #333333;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e2e2e;
+}
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+}
+
+/* Signal badges — use CSS vars so palette changes propagate */
+.badge-act-now {
+  background: rgba(62, 207, 142, 0.10);
+  color: #3ECF8E;
+  border: 1px solid rgba(62, 207, 142, 0.25);
+}
+.badge-watch {
+  background: rgba(245, 166, 35, 0.10);
+  color: #F5A623;
+  border: 1px solid rgba(245, 166, 35, 0.25);
+}
+.badge-avoid {
+  background: rgba(255, 71, 87, 0.10);
+  color: #FF4757;
+  border: 1px solid rgba(255, 71, 87, 0.25);
+}
+.badge-data-issue {
+  background: rgba(136, 68, 255, 0.10);
+  color: #8844ff;
+  border: 1px solid rgba(136, 68, 255, 0.25);
+}
+
+/* Live status dot — only element that keeps glow */
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  box-shadow: 0 0 5px rgba(62, 207, 142, 0.5);
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
