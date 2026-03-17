@@ -13,7 +13,7 @@ Add to Claude Code ~/.claude/settings.json:
         "cryptodistro": {
           "command": "python",
           "args": ["-m", "backend.mcp_server.server"],
-          "cwd": "/home/ironman/CryptoDistro2.0"
+          "cwd": "/path/to/CryptoDistro2.0"
         }
       }
     }
@@ -239,7 +239,7 @@ async def _tool_system_status() -> dict:
             "api_url": _api_base(),
             "database_ok": db_ok,
             "error": str(e),
-            "hint": "Start the backend: cd /home/ironman/CryptoDistro2.0 && uvicorn backend.main:app --reload",
+            "hint": "Start the backend: uvicorn backend.main:app --reload",
         }
 
 

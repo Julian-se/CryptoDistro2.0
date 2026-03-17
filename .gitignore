@@ -43,3 +43,6 @@ db/*.db-wal
 
 # Personal files accidentally in project root
 "All Bank transfers*"
+
+# Claude Code session reports (private usage data)
+frontend/public/insights.html

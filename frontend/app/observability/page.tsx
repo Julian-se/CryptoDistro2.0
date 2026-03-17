@@ -232,7 +232,7 @@ export default function ObservabilityPage() {
     "cryptodistro": {
       "command": "python",
       "args": ["-m", "backend.mcp_server.server"],
-      "cwd": "/home/ironman/CryptoDistro2.0"
+      "cwd": "/path/to/CryptoDistro2.0"
     }
   }
 }`}</pre>
