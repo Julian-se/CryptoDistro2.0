@@ -30,12 +30,12 @@ TEXT_SEC = '#8888aa'
 # ── Phase data ─────────────────────────────────────────────────────────────────
 PHASES = [
     ("Research & PDF Analysis",        datetime(2026,3,13,11, 0), datetime(2026,3,13,14, 0), BLUE,   "Grok AI report · P2P trading overview · First simulator HTML"),
-    ("Architecture v1 & Scripts",      datetime(2026,3,13,14, 0), datetime(2026,3,13,20,30), PURPLE, "src/ scaffold · Lightning connectors · Orchestrator · start.sh"),
+    ("Architecture v1 & Scripts",      datetime(2026,3,13,14, 0), datetime(2026,3,13,20,30), PURPLE, "Lightning node · swap connector · orchestrator · spread scanner"),
     ("Business Model Pivot",           datetime(2026,3,14,15, 0), datetime(2026,3,14,17,45), ORANGE, "Emerging markets research · blueprint.md · Binance + FX connectors"),
     ("Backend API + Frontend v1",      datetime(2026,3,15,15, 0), datetime(2026,3,15,18, 0), GREEN,  "FastAPI · Next.js 14 · WebSocket hooks · All 5 pages built"),
     ("Refill Page + Bug Fixes",        datetime(2026,3,16, 7, 0), datetime(2026,3,16, 9, 5), RED,    "refill/page.tsx · Noones connector · Schema fixes"),
     ("Visual Redesign (Supabase×xAI)", datetime(2026,3,16, 9, 5), datetime(2026,3,16,11,45), GREEN,  "Brainstorm → spec → plan → 9 tasks executed in 65 min"),
-    ("Live — DB Active",               datetime(2026,3,17, 0, 0), datetime(2026,3,17,20, 0), GREEN,  "Backend :8000 · SQLite writes · Live market scanning"),
+    ("Live — DB Active",               datetime(2026,3,17, 0, 0), datetime(2026,3,17,20, 0), GREEN,  "FastAPI :8000 · SQLite active · scanner on"),
 ]
 
 # ── Milestone data ─────────────────────────────────────────────────────────────
@@ -137,22 +137,23 @@ for i, (label, start, end, color, desc) in enumerate(PHASES):
     ax.add_patch(FancyBboxPatch((x0, y-BAR_H/2), min(0.3, dw*0.07), BAR_H,
         boxstyle="round,pad=0", linewidth=0, facecolor=color, alpha=0.85, zorder=4))
 
-    # Duration inside bar
+    # Duration label — top-right corner of bar, clear of description text
     if dur_h >= 1.0:
         dur_txt = f"{dur_h:.0f}h" if dur_h < 24 else f"{dur_h/24:.0f}d"
-        ax.text(x0 + dw - 0.3, y, dur_txt,
-                fontsize=8.5, color=color, fontfamily='monospace',
-                ha='right', va='center', zorder=5, alpha=0.9)
+        ax.text(x0 + dw - 0.2, y + BAR_H/2 - 0.04, dur_txt,
+                fontsize=8, color=color, fontfamily='monospace',
+                ha='right', va='top', zorder=6, alpha=0.9)
 
-    # Phase name — left side
-    ax.text(-0.6, y, label,
-            fontsize=9.5, color=TEXT_PRI, ha='right', va='center', fontweight='bold')
+    # Phase name drawn via ytick labels below — skip inline text
 
     # One-line description inside bar (only if bar is wide enough)
     if dw > 3.0:
-        ax.text(x0 + min(0.5, dw*0.08) + 0.3, y, desc,
-                fontsize=7.5, color=TEXT_SEC, ha='left', va='center',
-                style='italic', zorder=5, clip_on=True)
+        txt_x = x0 + min(0.5, dw*0.08) + 0.5
+        # For the rightmost bar, anchor text from left with hard right clip
+        ax.text(txt_x, y, desc,
+                fontsize=7.8, color='#b0b0c8', ha='left', va='center',
+                style='italic', zorder=5, clip_on=True,
+                wrap=False)
 
 # ── Milestones — staggered labels ──────────────────────────────────────────────
 base_y = len(PHASES) + 0.5
@@ -193,9 +194,13 @@ for h in range(0, int(TOTAL_HRS)+1, 6):
     ax.text(h, -0.75, t.strftime('%H:%M'), fontsize=6.5,
             color=TEXT_DIM, ha='center', fontfamily='monospace')
 
-ax.set_xlim(-13, TOTAL_HRS + 1)
+ax.set_xlim(-1, TOTAL_HRS + 3)
 ax.set_ylim(-0.9, len(PHASES) + LEVEL_OFFSETS[-1] + 1.6)
-ax.set_yticks([])
+# Y-axis tick labels — proper matplotlib way, sits outside the grey box
+ax.set_yticks(range(len(PHASES)))
+ax.set_yticklabels([p[0] for p in PHASES],
+                   fontsize=9.5, color=TEXT_PRI, fontweight='bold')
+ax.tick_params(axis='y', length=0, pad=10, colors=TEXT_PRI)
 ax.set_xticks([])
 
 # ─ Summary bar ────────────────────────────────────────────────────────────────
