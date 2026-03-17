@@ -36,3 +36,10 @@ db/*.db-wal
 
 # Large binaries
 *.pdf
+
+# Junk / accidental files
+=*
+*.txt
+build_timeline.png
+timeline.py
+.claude/
