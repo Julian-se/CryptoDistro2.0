@@ -13,8 +13,8 @@ import { formatUSD, formatPct, timeAgo } from '@/lib/utils'
 
 const COLORS = ['#3ECF8E', '#3B82F6', '#F5A623', '#8844ff', '#FF4757']
 
-// CoinMarketCap API via backend proxy or direct
-const CMC_KEY = '9e70089d58d545dba878b7e559024864'
+// CoinMarketCap API — set NEXT_PUBLIC_CMC_KEY in .env.local
+const CMC_KEY = process.env.NEXT_PUBLIC_CMC_KEY ?? ''
 
 interface CmcQuote {
   symbol: string
