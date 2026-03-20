@@ -65,7 +65,7 @@ Also:
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors (color token changes are CSS utility names — existing code uses the same token keys, so no TS errors).
@@ -73,7 +73,7 @@ Expected: 0 errors (color token changes are CSS utility names — existing code 
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add tailwind.config.js
 git commit -m "design: update Tailwind color tokens to Supabase×xAI palette"
 ```
@@ -200,7 +200,7 @@ Key changes from old file:
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -208,7 +208,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add app/globals.css
 git commit -m "design: update globals.css — new palette, remove neon glows and grid bg"
 ```
@@ -418,7 +418,7 @@ export function Sidebar() {
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -426,7 +426,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add components/layout/Sidebar.tsx
 git commit -m "feat: add Sidebar.tsx with Topbar and Sidebar named exports"
 ```
@@ -473,7 +473,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors. Note: `Navbar` import is now gone from layout. `Navbar.tsx` still exists but is no longer imported anywhere.
@@ -489,7 +489,7 @@ Start dev server (`npm run dev`) and verify:
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add app/layout.tsx
 git commit -m "feat: replace top-navbar layout with sidebar shell"
 ```
@@ -658,7 +658,7 @@ export function MarketTable({ markets }: Props) {
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -666,7 +666,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add components/dashboard/MarketTable.tsx
 git commit -m "feat: add MarketTable component (table-based market signal display)"
 ```
@@ -822,7 +822,7 @@ Key changes:
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -830,7 +830,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add app/page.tsx
 git commit -m "feat: replace dashboard cards+FlowViz with MarketTable, remove BalancePanel"
 ```
@@ -1045,7 +1045,7 @@ Keep all sections above (metric tiles, no-data banner, insights) and below (CMC 
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -1053,7 +1053,7 @@ Expected: 0 errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add app/analytics/page.tsx
 git commit -m "feat: analytics 2x2 chart grid with new palette — area, bar, h-bar, forecast"
 ```
@@ -1130,7 +1130,7 @@ Remove `glow?: boolean` from the `CardProps` interface too.
 - [ ] **Step 2: Run TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors. If `glow` prop is passed anywhere, TS will flag it — fix by removing those props at the call sites.
@@ -1138,7 +1138,7 @@ Expected: 0 errors. If `glow` prop is passed anywhere, TS will flag it — fix b
 - [ ] **Step 3: Check glow prop usage**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && grep -r "glow=" components/ app/
+cd frontend && grep -r "glow=" components/ app/
 ```
 
 Remove any `glow={true}` or `glow` props from Card call sites found.
@@ -1146,7 +1146,7 @@ Remove any `glow={true}` or `glow` props from Card call sites found.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add components/shared/Card.tsx
 git commit -m "design: update Card/MetricCard typography and remove glow prop"
 ```
@@ -1169,7 +1169,7 @@ No code changes required. This task is a visual smoke-test.
 The spec says: "Keep `animate-pulse-slow` only on the live status dot." Find all usages:
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && grep -rn "animate-pulse-slow" app/ components/
+cd frontend && grep -rn "animate-pulse-slow" app/ components/
 ```
 
 For any match NOT in `Sidebar.tsx` (the live status dot), remove the `animate-pulse-slow` class from that element.
@@ -1177,7 +1177,7 @@ For any match NOT in `Sidebar.tsx` (the live status dot), remove the `animate-pu
 - [ ] **Step 2: Start dev server and visit each page**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npm run dev
+cd frontend && npm run dev
 ```
 
 Visit in browser:
@@ -1193,7 +1193,7 @@ For each page, confirm:
 - [ ] **Step 3: Final TypeScript check**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors across the whole project.
@@ -1208,7 +1208,7 @@ These components are no longer imported anywhere:
 First verify they're unreferenced:
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 grep -r "Navbar" app/ components/ --include="*.tsx" | grep -v "Navbar.tsx"
 grep -r "MarketCard" app/ components/ --include="*.tsx" | grep -v "MarketCard.tsx"
 grep -r "BalancePanel" app/ components/ --include="*.tsx" | grep -v "BalancePanel.tsx"
@@ -1225,7 +1225,7 @@ rm frontend/components/dashboard/BalancePanel.tsx
 - [ ] **Step 5: Final TypeScript check after deletions**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 Expected: 0 errors.
@@ -1233,7 +1233,7 @@ Expected: 0 errors.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add -A
 git commit -m "chore: delete Navbar.tsx, MarketCard.tsx, BalancePanel.tsx (replaced)"
 ```
@@ -1260,13 +1260,13 @@ cd frontend && npm uninstall @react-three/fiber @react-three/drei three @types/t
 - [ ] **Run TypeScript check:**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend && npx tsc --noEmit
+cd frontend && npx tsc --noEmit
 ```
 
 - [ ] **Commit:**
 
 ```bash
-cd /home/ironman/CryptoDistro2.0/frontend
+cd frontend
 git add -A
 git commit -m "chore: remove FlowViz component and @react-three/* packages (~500KB bundle)"
 ```

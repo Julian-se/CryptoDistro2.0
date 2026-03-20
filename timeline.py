@@ -4,6 +4,8 @@ Scientific visualization using matplotlib + numpy
 Reconstructed from file system timestamps (no git repo available)
 """
 
+import os
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -239,6 +241,6 @@ ax_s.text(0.5, 0.04,
           transform=ax_s.transAxes, fontsize=7.5, color=TEXT_DIM, ha='center')
 
 # ─ Save ───────────────────────────────────────────────────────────────────────
-out = '/home/ironman/CryptoDistro2.0/build_timeline.png'
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'build_timeline.png')
 plt.savefig(out, dpi=180, bbox_inches='tight', facecolor=BG_BASE, edgecolor='none')
 print(f"Saved → {out}")

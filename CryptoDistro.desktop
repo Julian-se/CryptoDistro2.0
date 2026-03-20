@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=CryptoDistro 2.0
+Comment=P2P Bitcoin Trading Dashboard
+Exec=sh -c '"$HOME/CryptoDistro2.0/scripts/launch.sh"'
+Icon=cryptodistro
+Terminal=false
+Type=Application
+Categories=Finance;Network;
+StartupNotify=true
