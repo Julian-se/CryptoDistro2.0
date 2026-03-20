@@ -199,36 +199,63 @@ export interface TradesResponse {
 }
 
 export interface Trade {
-  id: string
-  created_at: number
-  market: string
-  buy_price: number
-  sell_price: number
-  amount_btc: number
-  gross_profit: number
-  fees: number
-  net_profit: number
-  platform: string
-  notes?: string
+  // P2P trade fields (synced from Noones)
+  id: number
+  trade_hash: string
+  status: string
+  trade_type: string
+  asset: string
+  fiat_amount: number
+  fiat_currency: string
+  crypto_amount: number
+  fiat_rate: number
+  counterparty: string
+  payment_method: string
+  opened_at: number
+  paid_at: number | null
+  released_at: number | null
+  completed_at: number | null
+  confirmation_lag_sec: number | null
+  profit_usd: number
+  fee_usd: number
+  offer_hash: string
+  synced_at: number
+}
+
+export interface CounterpartySummary {
+  name: string
+  trades: number
+  volume: number
+  avg_lag_sec: number
 }
 
 export interface PnLSummary {
   period_days: number
-  total_cycles: number
-  total_gross_profit: string
-  total_fees: string
-  total_net_profit: string
-  avg_cycle_duration_sec: number
-  avg_profit_per_cycle: string
-  cycles_per_day: number
+  total_trades: number
+  total_volume_fiat: number
+  total_crypto_sold: number
+  total_profit_usd: number
+  total_fees: number
+  net_profit_usd: number
+  avg_confirmation_lag_sec: number
+  trades_per_day: number
+  avg_profit_per_trade: number
   daily_pnl: DailyPnL[]
+  counterparties: CounterpartySummary[]
+  payment_methods: Record<string, { count: number; volume: number; profit: number; fees: number }>
 }
 
 export interface DailyPnL {
   date: string
   cycles: number
   profit: number
+  volume: number
 }
+
+export const syncTrades = () =>
+  fetchJSON<{ synced_at: number; fetched: number; new: number; updated: number; errors: number }>(
+    '/api/trades/sync', { method: 'POST' }
+  )
 
 export interface Cycle {
   id: string

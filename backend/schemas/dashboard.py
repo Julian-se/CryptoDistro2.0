@@ -27,7 +27,7 @@ class ControllerSignals(BaseModel):
     inventory: InventorySignal = InventorySignal()
     spread: SpreadSignal = SpreadSignal()
     velocity: VelocitySignal = VelocitySignal()
-    computed_at: float = 0.0
+    last_run_at: float = 0.0
 
 
 class PaymentMethod(BaseModel):

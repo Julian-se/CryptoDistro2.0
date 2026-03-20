@@ -309,11 +309,13 @@ class NoonesConnector:
 
     def get_balance(self) -> dict:
         """
-        Get wallet balances from user/me profile.
-        The Noones API does not expose a dedicated wallet/balance endpoint.
-        Wallet balances are embedded in the user profile under total_btc, total_usdt, etc.
-        Note: user/me requires JSON body (not form-encoded) — use direct httpx call.
-        Returns: {"btc": Decimal, "usdt": Decimal}
+        Get wallet balance from user/me profile.
+
+        Noones user/me fields:
+        - total_btc, total_usdt etc. are TRADE VOLUME STATS (strings like "Less than 10000"), NOT balances
+        - offer_liquidity: {"code": "USD", "value": 92.93} is the available offer balance in USD
+
+        Returns: {"btc": Decimal, "usdt": Decimal, "liquidity_usd": Decimal}
         """
         try:
             url = f"{self.api_url}/noones/v1/user/me"
@@ -324,12 +326,19 @@ class NoonesConnector:
             )
             resp.raise_for_status()
             data = resp.json().get("data", {})
-            btc = Decimal(str(data.get("total_btc") or "0"))
-            usdt = Decimal(str(data.get("total_usdt") or "0"))
-            return {"btc": btc, "usdt": usdt}
+
+            # offer_liquidity is the actual available balance for trades
+            liquidity = data.get("offer_liquidity", {})
+            liquidity_usd = Decimal(str(liquidity.get("value") or 0))
+
+            return {
+                "btc": Decimal("0"),
+                "usdt": liquidity_usd,  # Available as USDT equivalent
+                "liquidity_usd": liquidity_usd,
+            }
         except Exception as e:
             logger.error(f"Failed to fetch Noones balance: {e}")
-            return {"btc": Decimal("0"), "usdt": Decimal("0")}
+            return {"btc": Decimal("0"), "usdt": Decimal("0"), "liquidity_usd": Decimal("0")}
 
     # --- Swap API (crypto-to-crypto conversion) ---
 

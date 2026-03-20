@@ -108,6 +108,7 @@ def _try_init_real_mode(cfg: dict) -> bool:
 
         deps._binance = binance
         deps._noones = noones
+        deps._fx = fx
         deps._premium_monitor = pm
         deps._balance_manager = bm
         deps._trade_tracker = tt
@@ -148,9 +149,14 @@ async def _scan_loop():
     db_path = cfg["database"]["path"]
     markets_cfg = cfg.get("premium_monitor", {}).get("markets", [])
 
+    first_run = True
     while True:
         try:
-            await asyncio.sleep(60)
+            if first_run:
+                await asyncio.sleep(5)  # Brief delay for startup
+                first_run = False
+            else:
+                await asyncio.sleep(60)
             t0 = time.time()
 
             # ── Premium scan ────────────────────────────────────────────
@@ -309,6 +315,22 @@ async def _scan_loop():
                         await ws.broadcast_event(MARKET_UPDATE, [m.model_dump() for m in api_markets])
                         await ws.broadcast_event(CONTROLLER_SIGNAL, signals.model_dump())
                         await ws.broadcast_event(BALANCE_UPDATE, {k: v.model_dump() for k, v in balances_schema.items()})
+
+                    # ── Trade sync from Noones ────────────────────────
+                    noones = deps.get_noones()
+                    fx_conn = deps.get_fx()
+                    if noones and tracker and fx_conn:
+                        try:
+                            from src.core.trade_sync import sync_completed_trades
+                            await asyncio.to_thread(
+                                sync_completed_trades,
+                                noones, tracker,
+                                fx=fx_conn,
+                                btc_spot_usd=float(raw_snap.btc_spot_usd),
+                                pages=1,
+                            )
+                        except Exception as e:
+                            logger.warning(f"Trade sync error: {e}")
 
                     logger.info(f"Scan complete in {(time.time()-t0)*1000:.0f}ms — {len(api_markets)} markets")
 

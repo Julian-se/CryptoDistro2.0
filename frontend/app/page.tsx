@@ -1,24 +1,40 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getDashboardSnapshot, DashboardSnapshot } from '@/lib/api'
+import { getDashboardSnapshot, DashboardSnapshot, getTradesPnL, syncTrades, PnLSummary } from '@/lib/api'
 import { useWSEvent } from '@/hooks/useWebSocket'
 import { ControllerPanel } from '@/components/dashboard/ControllerPanel'
 import { IntelligenceChat } from '@/components/dashboard/IntelligenceChat'
 import { MarketTable } from '@/components/dashboard/MarketTable'
+import { StartupWidget } from '@/components/dashboard/StartupWidget'
 import { MetricCard } from '@/components/shared/Card'
 import { Spinner } from '@/components/shared/Spinner'
 import { formatUSD, formatPct, timeAgo } from '@/lib/utils'
 
 export default function DashboardPage() {
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null)
+  const [pnl, setPnl] = useState<PnLSummary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
 
   useEffect(() => {
-    getDashboardSnapshot()
-      .then(s => { setSnapshot(s); setLoading(false) })
-      .catch(() => setLoading(false))
+    const load = async () => {
+      try { setSnapshot(await getDashboardSnapshot()) } catch {}
+      try { setPnl(await getTradesPnL(7)) } catch {}
+      setLoading(false)
+    }
+    load()
   }, [])
+
+  const handleSync = async () => {
+    setSyncing(true)
+    try {
+      await syncTrades()
+      const p = await getTradesPnL(7)
+      setPnl(p)
+    } catch { /* ignore */ }
+    setSyncing(false)
+  }
 
   const wsSnapshot = useWSEvent<DashboardSnapshot | null>('snapshot', null)
   useEffect(() => { if (wsSnapshot) setSnapshot(wsSnapshot) }, [wsSnapshot])
@@ -83,29 +99,53 @@ export default function DashboardPage() {
       </div>
 
       {/* Metric tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <MetricCard
           label="BTC Spot"
           value={formatUSD(snapshot.btc_spot_usd, 0)}
           color="text-accent-green"
         />
         <MetricCard
-          label="Active Markets"
-          value={`${actNowCount} / ${snapshot.markets.length}`}
-          color={actNowCount > 0 ? 'text-accent-green' : 'text-text-primary'}
-          sub="ACT_NOW signals"
+          label="7d Trades"
+          value={pnl?.total_trades ?? 0}
+          sub={pnl && pnl.trades_per_day > 0 ? `${pnl.trades_per_day.toFixed(1)}/day` : 'no data'}
+          color="text-accent-blue"
         />
         <MetricCard
-          label="Avg Premium"
-          value={formatPct(avgPremium)}
+          label="7d Volume"
+          value={pnl ? `${pnl.total_volume_fiat.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${pnl.daily_pnl?.[0]?.date ? 'SEK' : ''}` : '$0'}
           color="text-accent-green"
-          sub="30-day average"
         />
         <MetricCard
-          label="Open Cycles"
-          value={snapshot.open_cycles}
-          color={snapshot.open_cycles > 0 ? 'text-accent-blue' : 'text-text-primary'}
+          label="7d Profit"
+          value={formatUSD(pnl?.net_profit_usd ?? 0)}
+          sub={pnl && pnl.avg_profit_per_trade > 0 ? `${formatUSD(pnl.avg_profit_per_trade)}/trade` : undefined}
+          color={(pnl?.net_profit_usd ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}
         />
+        <MetricCard
+          label="Avg Confirm"
+          value={pnl && pnl.avg_confirmation_lag_sec > 0
+            ? `${Math.round(pnl.avg_confirmation_lag_sec / 60)}m`
+            : '--'}
+          sub={pnl && pnl.avg_confirmation_lag_sec > 300 ? 'Target: <5m' : pnl && pnl.avg_confirmation_lag_sec > 0 ? 'On target' : undefined}
+          color={pnl && pnl.avg_confirmation_lag_sec > 300 ? 'text-accent-orange' : 'text-accent-green'}
+        />
+      </div>
+
+      {/* Sync button */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="text-xs font-mono px-3 py-1.5 rounded border border-accent-green/20 bg-accent-green/5 text-accent-green hover:bg-accent-green/10 transition-colors disabled:opacity-50"
+        >
+          {syncing ? 'Syncing...' : 'Sync Noones Trades'}
+        </button>
+        {pnl && pnl.total_trades > 0 && (
+          <span className="text-xs text-text-muted font-mono">
+            {pnl.total_trades} trades synced
+          </span>
+        )}
       </div>
 
       {/* Main grid: market table + right panel */}
@@ -116,8 +156,9 @@ export default function DashboardPage() {
           <IntelligenceChat />
         </div>
 
-        {/* Controller panel */}
-        <div>
+        {/* Right panel: startup + controller */}
+        <div className="space-y-4">
+          <StartupWidget />
           <ControllerPanel signals={snapshot.controller_signals} />
         </div>
       </div>

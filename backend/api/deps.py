@@ -9,6 +9,7 @@ from backend.schemas.dashboard import ControllerSignals, DashboardSnapshot
 # Singletons — populated by lifespan in main.py
 _binance = None
 _noones = None
+_fx = None
 _premium_monitor = None
 _balance_manager = None
 _trade_tracker = None
@@ -30,6 +31,9 @@ def get_binance():
 
 def get_noones():
     return _noones
+
+def get_fx():
+    return _fx
 
 def get_premium_monitor():
     return _premium_monitor

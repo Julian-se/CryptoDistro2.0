@@ -1,13 +1,15 @@
 """
 Trade tracker — SQLite logging of all trades and P&L calculation.
 
-Every buy, sell, and transfer is recorded. P&L calculated per cycle
-(buy→transfer→sell) and cumulatively.
+Supports two schemas:
+  1. Legacy cycles (buy→transfer→sell across platforms)
+  2. P2P trades synced from Noones (the actual business model)
 """
 
 import logging
 import sqlite3
 import time
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -34,12 +36,12 @@ class TradeTracker:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp REAL NOT NULL,
                 cycle_id TEXT,
-                type TEXT NOT NULL,          -- 'buy', 'sell', 'transfer'
-                platform TEXT NOT NULL,       -- 'binance', 'noones', 'lightning'
-                asset TEXT NOT NULL,          -- 'BTC', 'USDT'
-                quantity TEXT NOT NULL,       -- Decimal as string
-                price_usd TEXT,              -- Price per unit in USD
-                total_usd TEXT,              -- Total value in USD
+                type TEXT NOT NULL,
+                platform TEXT NOT NULL,
+                asset TEXT NOT NULL,
+                quantity TEXT NOT NULL,
+                price_usd TEXT,
+                total_usd TEXT,
                 fee_usd TEXT DEFAULT '0',
                 order_id TEXT,
                 offer_id TEXT,
@@ -51,7 +53,7 @@ class TradeTracker:
                 id TEXT PRIMARY KEY,
                 started_at REAL NOT NULL,
                 completed_at REAL,
-                status TEXT DEFAULT 'open',   -- 'open', 'completed', 'failed'
+                status TEXT DEFAULT 'open',
                 buy_platform TEXT,
                 sell_platform TEXT,
                 asset TEXT,
@@ -65,9 +67,35 @@ class TradeTracker:
                 notes TEXT
             );
 
+            CREATE TABLE IF NOT EXISTS p2p_trades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trade_hash TEXT UNIQUE NOT NULL,
+                status TEXT NOT NULL,
+                trade_type TEXT NOT NULL,
+                asset TEXT NOT NULL,
+                fiat_amount REAL NOT NULL,
+                fiat_currency TEXT NOT NULL,
+                crypto_amount REAL NOT NULL,
+                fiat_rate REAL NOT NULL,
+                counterparty TEXT,
+                payment_method TEXT,
+                opened_at REAL NOT NULL,
+                paid_at REAL,
+                released_at REAL,
+                completed_at REAL,
+                confirmation_lag_sec REAL,
+                profit_usd REAL,
+                fee_usd REAL DEFAULT 0,
+                offer_hash TEXT,
+                synced_at REAL NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_trades_cycle ON trades(cycle_id);
             CREATE INDEX IF NOT EXISTS idx_trades_timestamp ON trades(timestamp);
             CREATE INDEX IF NOT EXISTS idx_cycles_status ON cycles(status);
+            CREATE INDEX IF NOT EXISTS idx_p2p_trade_hash ON p2p_trades(trade_hash);
+            CREATE INDEX IF NOT EXISTS idx_p2p_completed ON p2p_trades(completed_at);
+            CREATE INDEX IF NOT EXISTS idx_p2p_status ON p2p_trades(status);
         """)
         self.conn.commit()
 
@@ -235,6 +263,164 @@ class TradeTracker:
             "SELECT * FROM cycles WHERE status = 'open' ORDER BY started_at DESC"
         ).fetchall()
         return [dict(r) for r in rows]
+
+    # --- P2P Trade Sync (Noones) ---
+
+    def upsert_p2p_trade(self, trade: dict) -> bool:
+        """
+        Insert or update a P2P trade from Noones.
+        Returns True if this was a new trade, False if updated.
+        """
+        trade_hash = trade["trade_hash"]
+        existing = self.conn.execute(
+            "SELECT id FROM p2p_trades WHERE trade_hash = ?", (trade_hash,)
+        ).fetchone()
+
+        opened_at = trade.get("opened_at", 0)
+        paid_at = trade.get("paid_at")
+        released_at = trade.get("released_at")
+        completed_at = trade.get("completed_at")
+
+        # Calculate confirmation lag: paid → released
+        confirmation_lag = None
+        if paid_at and released_at:
+            confirmation_lag = released_at - paid_at
+
+        if existing:
+            # Preserve existing non-zero fee if new value is 0 (list endpoint lacks fee data)
+            new_fee = trade.get("fee_usd", 0) or 0
+            self.conn.execute(
+                """UPDATE p2p_trades SET
+                    status = ?, paid_at = ?, released_at = ?, completed_at = ?,
+                    confirmation_lag_sec = ?, profit_usd = ?,
+                    fee_usd = CASE WHEN ? > 0 THEN ? ELSE fee_usd END,
+                    synced_at = ?
+                WHERE trade_hash = ?""",
+                (
+                    trade["status"], paid_at, released_at, completed_at,
+                    confirmation_lag, trade.get("profit_usd"),
+                    new_fee, new_fee, time.time(), trade_hash,
+                ),
+            )
+            self.conn.commit()
+            return False
+
+        self.conn.execute(
+            """INSERT INTO p2p_trades
+            (trade_hash, status, trade_type, asset, fiat_amount, fiat_currency,
+             crypto_amount, fiat_rate, counterparty, payment_method,
+             opened_at, paid_at, released_at, completed_at,
+             confirmation_lag_sec, profit_usd, fee_usd, offer_hash, synced_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                trade_hash, trade["status"], trade.get("trade_type", "sell"),
+                trade.get("asset", "USDT"),
+                trade["fiat_amount"], trade["fiat_currency"],
+                trade["crypto_amount"], trade.get("fiat_rate", 0),
+                trade.get("counterparty"), trade.get("payment_method"),
+                opened_at, paid_at, released_at, completed_at,
+                confirmation_lag, trade.get("profit_usd"),
+                trade.get("fee_usd", 0), trade.get("offer_hash"),
+                time.time(),
+            ),
+        )
+        self.conn.commit()
+        logger.info(f"Synced P2P trade {trade_hash}: {trade['fiat_amount']} {trade['fiat_currency']}")
+        return True
+
+    def get_p2p_trades(self, limit: int = 50, days: int | None = None) -> list[dict]:
+        """Get P2P trades, optionally filtered by recency."""
+        if days:
+            cutoff = time.time() - (days * 86400)
+            rows = self.conn.execute(
+                "SELECT * FROM p2p_trades WHERE completed_at > ? ORDER BY completed_at DESC LIMIT ?",
+                (cutoff, limit),
+            ).fetchall()
+        else:
+            rows = self.conn.execute(
+                "SELECT * FROM p2p_trades ORDER BY opened_at DESC LIMIT ?", (limit,)
+            ).fetchall()
+        return [dict(r) for r in rows]
+
+    def get_p2p_pnl(self, days: int = 30) -> dict:
+        """P&L summary from P2P trades."""
+        cutoff = time.time() - (days * 86400)
+        rows = self.conn.execute(
+            "SELECT * FROM p2p_trades WHERE status = 'completed' AND completed_at > ?",
+            (cutoff,),
+        ).fetchall()
+        trades = [dict(r) for r in rows]
+
+        total_volume_fiat = sum(t["fiat_amount"] for t in trades)
+        total_crypto = sum(t["crypto_amount"] for t in trades)
+        total_profit = sum(t["profit_usd"] or 0 for t in trades)
+        total_fees = sum(t["fee_usd"] or 0 for t in trades)
+        avg_lag = (
+            sum(t["confirmation_lag_sec"] or 0 for t in trades) / len(trades)
+            if trades else 0
+        )
+
+        # Daily breakdown
+        daily: dict[str, dict] = {}
+        for t in trades:
+            ts = t["completed_at"] or t["opened_at"]
+            day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+            if day not in daily:
+                daily[day] = {"date": day, "cycles": 0, "profit": 0.0, "volume": 0.0}
+            daily[day]["cycles"] += 1
+            daily[day]["profit"] += t["profit_usd"] or 0
+            daily[day]["volume"] += t["fiat_amount"]
+
+        daily_pnl = sorted(daily.values(), key=lambda x: x["date"])
+
+        # Counterparty breakdown
+        counterparties: dict[str, dict] = {}
+        for t in trades:
+            cp = t["counterparty"] or "unknown"
+            if cp not in counterparties:
+                counterparties[cp] = {"name": cp, "trades": 0, "volume": 0.0, "avg_lag_sec": 0.0, "lags": []}
+            counterparties[cp]["trades"] += 1
+            counterparties[cp]["volume"] += t["fiat_amount"]
+            if t["confirmation_lag_sec"]:
+                counterparties[cp]["lags"].append(t["confirmation_lag_sec"])
+
+        for cp in counterparties.values():
+            cp["avg_lag_sec"] = sum(cp["lags"]) / len(cp["lags"]) if cp["lags"] else 0
+            del cp["lags"]
+
+        # Payment method breakdown — with profit, fees, and volume per method
+        methods: dict[str, dict] = {}
+        for t in trades:
+            m = t["payment_method"] or "unknown"
+            if m not in methods:
+                methods[m] = {"count": 0, "volume": 0.0, "profit": 0.0, "fees": 0.0}
+            methods[m]["count"] += 1
+            methods[m]["volume"] += t["fiat_amount"]
+            methods[m]["profit"] += t["profit_usd"] or 0
+            methods[m]["fees"] += t["fee_usd"] or 0
+
+        actual_days = max(1, len(daily))
+
+        return {
+            "period_days": days,
+            "total_trades": len(trades),
+            "total_volume_fiat": round(total_volume_fiat, 2),
+            "total_crypto_sold": round(total_crypto, 6),
+            "total_profit_usd": round(total_profit, 4),
+            "total_fees": round(total_fees, 4),
+            "net_profit_usd": round(total_profit - total_fees, 4),
+            "avg_confirmation_lag_sec": round(avg_lag, 1),
+            "trades_per_day": round(len(trades) / actual_days, 1),
+            "avg_profit_per_trade": round(total_profit / len(trades), 4) if trades else 0,
+            "daily_pnl": daily_pnl,
+            "counterparties": list(counterparties.values()),
+            "payment_methods": methods,
+        }
+
+    def get_p2p_trade_count(self) -> int:
+        """Get total number of synced P2P trades."""
+        row = self.conn.execute("SELECT COUNT(*) as cnt FROM p2p_trades").fetchone()
+        return row["cnt"] if row else 0
 
     def close(self):
         self.conn.close()
