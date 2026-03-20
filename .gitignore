@@ -42,7 +42,7 @@ db/*.db-wal
 .claude/
 
 # Personal files accidentally in project root
-"All Bank transfers*"
+All\ Bank\ transfers*
 
 # Claude Code session reports (private usage data)
 frontend/public/insights.html
